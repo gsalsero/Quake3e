@@ -79,6 +79,7 @@ stages:
     - task: VSBuild@1
       inputs:
         solution: 'code/win32/msvc2017/quake3e.sln'
+        msbuildArgs: '/p:ProjectDependencies=renderervk'
         platform: 'Win64'
         configuration: 'Release'
         maximumCpuCount: true
