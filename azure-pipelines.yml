@@ -48,14 +48,14 @@ stages:
     steps:
     - task: VSBuild@1
       inputs:
-        solution: 'code/win32/msvc2019/quake3e.sln'
+        solution: 'code/win32/msvc2017/quake3e.sln'
         platform: 'Win64'
         configuration: 'Release'
         maximumCpuCount: true
         msbuildArchitecture: 'x64'
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: code\win32\msvc2019\output
+        rootFolderOrFile: code\win32\msvc2017\output
         includeRootFolder: true
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-x64-$(Build.BuildId).zip'
