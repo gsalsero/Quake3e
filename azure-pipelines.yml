@@ -1,0 +1,81 @@
+trigger:
+- azure-pipelines
+
+stages:
+- stage: linux
+  jobs:
+  - job: build
+    pool:
+      vmImage: 'ubuntu-latest'
+    container: gsalsero/quake3e-linux-builder:latest
+    steps:
+    - script: |
+        make
+      displayName: 'make quake3e'
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: build/release-linux-x86_64/
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-linux-x86_64-$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    # - task: CopyFilesOverSSH@0
+    #   inputs:
+    #     sshEndpoint: 'q3 server'
+    #     sourceFolder: '$(Build.ArtifactStagingDirectory)'
+    #     contents: 'quake3e-release-linux-x86_64-$(Build.BuildId).zip'
+    #     targetFolder: '/var/ftp/ioquake3'
+    #     readyTimeout: '20000'
+    # - task: SSH@0
+    #   inputs:
+    #     sshEndpoint: 'q3 server'
+    #     runOptions: 'inline'
+    #     inline: |
+    #       cd /var/ftp/ioquake3
+    #       ln -sf quake3e-release-linux-x86_64-$(Build.BuildId).zip quake3e-release-linux-x86_64-latest.zip
+    #     readyTimeout: '20000'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'pipeline'
+
+- stage: windows64
+  dependsOn: [] 
+  jobs:
+  - job: build
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: VSBuild@1
+      inputs:
+        solution: 'code/win32/msvc2019/quake3e.sln'
+        platform: 'Win64'
+        configuration: 'Release'
+        maximumCpuCount: true
+        msbuildArchitecture: 'x64'
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: code\win32\msvc2019\output
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-x64-$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    # - task: CopyFilesOverSSH@0
+    #   inputs:
+    #     sshEndpoint: 'q3 server'
+    #     sourceFolder: '$(Build.ArtifactStagingDirectory)'
+    #     contents: 'quake3e-release-win-x64-$(Build.BuildId).zip'
+    #     targetFolder: '/var/ftp/ioquake3'
+    #     readyTimeout: '20000'
+    # - task: SSH@0
+    #   inputs:
+    #     sshEndpoint: 'q3 server'
+    #     runOptions: 'inline'
+    #     inline: |
+    #       cd /var/ftp/ioquake3
+    #       ln -sf quake3e-release-win-x64-$(Build.BuildId).zip quake3e-release-win-x64-latest.zip
+    #     readyTimeout: '20000'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'pipeline'
