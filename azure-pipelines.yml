@@ -65,9 +65,7 @@ stages:
       vmImage: 'windows-latest'
     steps:
     - script: |
-        # Clean solution
         msbuild code\win32\msvc2017\quake3e.sln /t:Clean /p:Configuration=Release;Platform=Win64
-        # Set renderer dependency to renderervk
         msbuild code\win32\msvc2017\quake3e.sln /p:Configuration=Release;Platform=Win64 /p:ProjectDependencies=renderervk
       displayName: 'Clean solution and set Vulkan renderer dependency'
     - task: VSBuild@1
