@@ -33,6 +33,12 @@ stages:
     pool:
       vmImage: 'windows-latest'
     steps:
+    - script: |
+        Get-ChildItem -Path 'code\win32\msvc2017' -Recurse -Filter *.vcxproj |
+        ForEach-Object {
+            (Get-Content $_.FullName) -replace '<PlatformToolset>v141</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>' | Set-Content $_.FullName
+        }
+      displayName: 'Retarget platform toolset to v143'
     - task: VSBuild@1
       inputs:
         solution: 'code/win32/msvc2017/quake3e.sln'
