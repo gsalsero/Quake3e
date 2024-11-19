@@ -19,30 +19,17 @@ stages:
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-linux-x86_64-$(Build.BuildId).zip'
         replaceExistingArchive: true
-    # - task: CopyFilesOverSSH@0
-    #   inputs:
-    #     sshEndpoint: 'q3 server'
-    #     sourceFolder: '$(Build.ArtifactStagingDirectory)'
-    #     contents: 'quake3e-release-linux-x86_64-$(Build.BuildId).zip'
-    #     targetFolder: '/var/ftp/ioquake3'
-    #     readyTimeout: '20000'
-    # - task: SSH@0
-    #   inputs:
-    #     sshEndpoint: 'q3 server'
-    #     runOptions: 'inline'
-    #     inline: |
-    #       cd /var/ftp/ioquake3
-    #       ln -sf quake3e-release-linux-x86_64-$(Build.BuildId).zip quake3e-release-linux-x86_64-latest.zip
-    #     readyTimeout: '20000'
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         publishLocation: 'pipeline'
 
 - stage: windows64
-  dependsOn: [] 
+  dependsOn: []
   jobs:
-  - job: build
+  # Standard DirectX Build
+  - job: build_directx
+    displayName: 'Build quake3e - DirectX Backend'
     pool:
       vmImage: 'windows-latest'
     steps:
@@ -58,23 +45,39 @@ stages:
         rootFolderOrFile: code\win32\msvc2017\output
         includeRootFolder: true
         archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-x64-$(Build.BuildId).zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-directx-x64-$(Build.BuildId).zip'
         replaceExistingArchive: true
-    # - task: CopyFilesOverSSH@0
-    #   inputs:
-    #     sshEndpoint: 'q3 server'
-    #     sourceFolder: '$(Build.ArtifactStagingDirectory)'
-    #     contents: 'quake3e-release-win-x64-$(Build.BuildId).zip'
-    #     targetFolder: '/var/ftp/ioquake3'
-    #     readyTimeout: '20000'
-    # - task: SSH@0
-    #   inputs:
-    #     sshEndpoint: 'q3 server'
-    #     runOptions: 'inline'
-    #     inline: |
-    #       cd /var/ftp/ioquake3
-    #       ln -sf quake3e-release-win-x64-$(Build.BuildId).zip quake3e-release-win-x64-latest.zip
-    #     readyTimeout: '20000'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'pipeline'
+
+  # Vulkan Backend Build
+  - job: build_vulkan
+    displayName: 'Build quake3e - Vulkan Backend'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - script: |
+        # Clean solution
+        msbuild code\win32\msvc2017\quake3e.sln /t:Clean /p:Configuration=Release;Platform=Win64
+        # Set renderer dependency to renderervk
+        msbuild code\win32\msvc2017\quake3e.sln /p:Configuration=Release;Platform=Win64 /p:ProjectDependencies=renderervk
+      displayName: 'Clean solution and set Vulkan renderer dependency'
+    - task: VSBuild@1
+      inputs:
+        solution: 'code/win32/msvc2017/quake3e.sln'
+        platform: 'Win64'
+        configuration: 'Release'
+        maximumCpuCount: true
+        msbuildArchitecture: 'x64'
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: code\win32\msvc2017\output
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-vulkan-x64-$(Build.BuildId).zip'
+        replaceExistingArchive: true
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
