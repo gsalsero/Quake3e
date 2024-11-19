@@ -31,7 +31,7 @@ stages:
   - job: build_directx
     displayName: 'Build quake3e - DirectX Backend'
     pool:
-      vmImage: "'windows-latest'"
+      vmImage: 'windows-latest'
     steps:
     - powershell: |
         Get-ChildItem -Path 'code\win32\msvc2017' -Recurse -Filter *.vcxproj |
