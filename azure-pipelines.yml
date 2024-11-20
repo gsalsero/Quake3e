@@ -71,11 +71,6 @@ stages:
             (Get-Content $_.FullName) -replace '<PlatformToolset>v141</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>' | Set-Content $_.FullName
         }
       displayName: 'Retarget platform toolset to v143'
-
-    # - script: |
-    #     msbuild code\win32\msvc2017\quake3e.sln /t:Clean /p:Configuration=Release;Platform=Win64
-    #     msbuild code\win32\msvc2017\quake3e.sln /p:Configuration=Release;Platform=Win64 /p:ProjectDependencies=renderervk
-    #   displayName: 'Clean solution and set Vulkan renderer dependency'
     - task: VSBuild@1
       inputs:
         solution: 'code/win32/msvc2017/quake3e.sln'
@@ -95,3 +90,25 @@ stages:
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         publishLocation: 'pipeline'
+
+- stage: macOS
+  jobs:
+  - job: build
+    pool:
+      vmImage: 'macos-14-arm64'
+    steps:
+    - script: |
+        make
+        ls -R
+      displayName: 'make quake3e'
+    # - task: ArchiveFiles@2
+    #   inputs:
+    #     rootFolderOrFile: build/release-linux-x86_64/
+    #     includeRootFolder: true
+    #     archiveType: 'zip'
+    #     archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-macos-arm64-$(Build.BuildId).zip'
+    #     replaceExistingArchive: true
+    # - task: PublishPipelineArtifact@1
+    #   inputs:
+    #     targetPath: '$(Build.ArtifactStagingDirectory)'
+    #     publishLocation: 'pipeline'
