@@ -91,24 +91,24 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)'
         publishLocation: 'pipeline'
 
-- stage: macOS
-  jobs:
-  - job: build
-    pool:
-      vmImage: 'macos-14-arm64'
-    steps:
-    - script: |
-        make
-        ls -R
-      displayName: 'make quake3e'
-    # - task: ArchiveFiles@2
-    #   inputs:
-    #     rootFolderOrFile: build/release-linux-x86_64/
-    #     includeRootFolder: true
-    #     archiveType: 'zip'
-    #     archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-macos-arm64-$(Build.BuildId).zip'
-    #     replaceExistingArchive: true
-    # - task: PublishPipelineArtifact@1
-    #   inputs:
-    #     targetPath: '$(Build.ArtifactStagingDirectory)'
-    #     publishLocation: 'pipeline'
+# - stage: macOS
+#   jobs:
+#   - job: build
+#     pool:
+#       vmImage: 'macos-14-arm64'
+#     steps:
+#     - script: |
+#         make
+#         ls -R
+#       displayName: 'make quake3e'
+#     # - task: ArchiveFiles@2
+#     #   inputs:
+#     #     rootFolderOrFile: build/release-linux-x86_64/
+#     #     includeRootFolder: true
+#     #     archiveType: 'zip'
+#     #     archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-macos-arm64-$(Build.BuildId).zip'
+#     #     replaceExistingArchive: true
+#     # - task: PublishPipelineArtifact@1
+#     #   inputs:
+#     #     targetPath: '$(Build.ArtifactStagingDirectory)'
+#     #     publishLocation: 'pipeline'
