@@ -4798,11 +4798,9 @@ void Field_CompleteCommand( const char *cmd, qboolean doCommands, qboolean doCva
 		const char *baseCmd = Cmd_Argv( 0 );
 		const char *p;
 
-#ifndef DEDICATED
-			// This should always be true
-			if ( baseCmd[ 0 ] == '\\' || baseCmd[ 0 ] == '/' )
-				baseCmd++;
-#endif
+		// This should always be true
+		if ( baseCmd[ 0 ] == '\\' || baseCmd[ 0 ] == '/' )
+			baseCmd++;
 
 		if( ( p = Field_FindFirstSeparator( cmd ) ) != NULL )
 		{
