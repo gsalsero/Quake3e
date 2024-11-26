@@ -119,6 +119,7 @@ qboolean Con_FindHistorySuggestion(field_t *field)
 			}
 		}
 
+		memset(field->consoleSuggestion, 0, sizeof(field->consoleSuggestion));
 		return qfalse;
 	}
 
