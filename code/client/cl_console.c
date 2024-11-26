@@ -162,6 +162,9 @@ static void Con_MessageMode4_f( void ) {
 	Key_SetCatcher( Key_GetCatcher() ^ KEYCATCH_MESSAGE );
 }
 
+void Con_ToggleHistorySuggestions( void ) {
+	historySuggestionsEnabled = !historySuggestionsEnabled;
+}
 
 /*
 ================
@@ -414,6 +417,7 @@ void Con_Init( void )
 	Cmd_AddCommand( "messagemode2", Con_MessageMode2_f );
 	Cmd_AddCommand( "messagemode3", Con_MessageMode3_f );
 	Cmd_AddCommand( "messagemode4", Con_MessageMode4_f );
+	Cmd_AddCommand( "toggleHistorySuggestions", Con_ToggleHistorySuggestions );
 }
 
 
@@ -993,3 +997,4 @@ void Con_Close( void )
 	con.finalFrac = 0.0;			// none visible
 	con.displayFrac = 0.0;
 }
+

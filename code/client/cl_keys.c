@@ -30,6 +30,7 @@ key up events are sent even if in console mode
 field_t		g_consoleField;
 field_t		chatField;
 qboolean	chat_team;
+qboolean historySuggestionsEnabled = qfalse;
 
 int			chat_playerNum;
 
@@ -133,7 +134,10 @@ static void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int 
 
 	Field_DrawString( edit->buffer, x, y, drawLen, prestep, fieldWidth, size, showCursor, noColorEscape, COLOR_WHITE );
 
-	Field_DrawString( edit->consoleSuggestion + drawLen, x + (drawLen * size), y, fieldWidth, prestep, fieldWidth, size, showCursor, noColorEscape, COLOR_CYAN );
+	if(strlen(edit->consoleSuggestion) > drawLen) {
+		// draw the suggestion
+		Field_DrawString( edit->consoleSuggestion + drawLen, x + (drawLen * size), y, fieldWidth, prestep, fieldWidth, size, showCursor, noColorEscape, COLOR_CYAN );
+	}
 
 	// draw the cursor
 	if ( showCursor ) {
@@ -332,7 +336,10 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 			{
 				edit->scroll--;
 			}
-			Con_FindHistorySuggestion(edit);
+
+			if(historySuggestionsEnabled) {
+				Con_FindHistorySuggestion(edit);
+			}
 		}
 		return;
 	}
@@ -373,7 +380,9 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 		edit->buffer[edit->cursor] = ch;
 		edit->cursor++;
 
-		Con_FindHistorySuggestion(edit);
+		if(historySuggestionsEnabled) {
+			Con_FindHistorySuggestion(edit);
+		}
 	}
 
 

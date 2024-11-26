@@ -358,6 +358,8 @@ extern int bigchar_height;
 extern int smallchar_width;
 extern int smallchar_height;
 
+extern qboolean historySuggestionsEnabled;
+
 extern	clientStatic_t		cls;
 
 extern	char		cl_oldGame[MAX_QPATH];
