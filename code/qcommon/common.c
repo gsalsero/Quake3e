@@ -4484,6 +4484,7 @@ Field_Clear
 */
 void Field_Clear( field_t *edit ) {
 	memset( edit->buffer, 0, sizeof( edit->buffer ) );
+	memset( edit->consoleSuggestion, 0, sizeof( edit->consoleSuggestion ) );
 	edit->cursor = 0;
 	edit->scroll = 0;
 }

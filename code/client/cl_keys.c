@@ -30,6 +30,7 @@ key up events are sent even if in console mode
 field_t		g_consoleField;
 field_t		chatField;
 qboolean	chat_team;
+qboolean historySuggestionsEnabled = qfalse;
 
 int			chat_playerNum;
 
@@ -43,6 +44,50 @@ EDIT FIELDS
 =============================================================================
 */
 
+
+static void Field_DrawString(const char* buffer, int x, int y, int drawLen, int prestep, int fieldWidth, int size, qboolean showCursor,
+		qboolean noColorEscape, int curColor) {
+	int		len;
+	char	str[MAX_STRING_CHARS], *s;
+	int		i;
+
+	len = strlen( buffer );
+	Com_Memcpy( str, buffer + prestep, drawLen );
+	str[ drawLen ] = '\0';
+
+	if ( prestep > 0 ) {
+		// we need to track last actual color because we cut some text before
+		s = buffer;
+		for ( i = 0; i < prestep + 1; i++, s++ ) {
+			if ( Q_IsColorString( s ) ) {
+				curColor = *(s+1);
+				s++;
+			}
+		}
+		// scroll marker
+		// FIXME: force white color?
+		if ( str[0] ) {
+			str[0] = '<';
+		}
+	}
+
+	// draw it
+	if ( size == smallchar_width ) {
+		SCR_DrawSmallStringExt( x, y, str, g_color_table[ ColorIndexFromChar( curColor ) ],
+			qfalse, noColorEscape );
+		if ( len > drawLen + prestep ) {
+			SCR_DrawSmallChar( x + fieldWidth * size, y, '>' );
+		}
+	} else {
+		if ( len > drawLen + prestep ) {
+			SCR_DrawStringExt( x + fieldWidth * BIGCHAR_WIDTH, y, size, ">",
+				g_color_table[ ColorIndex( COLOR_WHITE ) ], qfalse, noColorEscape );
+		}
+		// draw big string with drop shadow
+		SCR_DrawStringExt( x, y, BIGCHAR_WIDTH, str, g_color_table[ ColorIndexFromChar( curColor ) ],
+			qfalse, noColorEscape );
+	}
+}
 
 /*
 ===================
@@ -58,11 +103,11 @@ static void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int 
 	int		drawLen;
 	int		prestep;
 	int		cursorChar;
-	char	str[MAX_STRING_CHARS], *s;
+	char	str[MAX_STRING_CHARS];
 	int		i;
-	int		curColor;
 
-	drawLen = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
+	int fieldWidth = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
+	drawLen = fieldWidth;
 	len = strlen( edit->buffer );
 
 	// guarantee that cursor will be visible
@@ -87,43 +132,11 @@ static void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int 
 		Com_Error( ERR_DROP, "drawLen >= MAX_STRING_CHARS" );
 	}
 
-	Com_Memcpy( str, edit->buffer + prestep, drawLen );
-	str[ drawLen ] = '\0';
+	Field_DrawString( edit->buffer, x, y, drawLen, prestep, fieldWidth, size, showCursor, noColorEscape, COLOR_WHITE );
 
-	// color tracking
-	curColor = COLOR_WHITE;
-
-	if ( prestep > 0 ) {
-		// we need to track last actual color because we cut some text before
-		s = edit->buffer;
-		for ( i = 0; i < prestep + 1; i++, s++ ) {
-			if ( Q_IsColorString( s ) ) {
-				curColor = *(s+1);
-				s++;
-			}
-		}
-		// scroll marker
-		// FIXME: force white color?
-		if ( str[0] ) {
-			str[0] = '<';
-		}
-	}
-
-	// draw it
-	if ( size == smallchar_width ) {
-		SCR_DrawSmallStringExt( x, y, str, g_color_table[ ColorIndexFromChar( curColor ) ],
-			qfalse, noColorEscape );
-		if ( len > drawLen + prestep ) {
-			SCR_DrawSmallChar( x + ( edit->widthInChars - 1 ) * size, y, '>' );
-		}
-	} else {
-		if ( len > drawLen + prestep ) {
-			SCR_DrawStringExt( x + ( edit->widthInChars - 1 ) * BIGCHAR_WIDTH, y, size, ">",
-				g_color_table[ ColorIndex( COLOR_WHITE ) ], qfalse, noColorEscape );
-		}
-		// draw big string with drop shadow
-		SCR_DrawStringExt( x, y, BIGCHAR_WIDTH, str, g_color_table[ ColorIndexFromChar( curColor ) ],
-			qfalse, noColorEscape );
+	if(strlen(edit->consoleSuggestion) > drawLen) {
+		// draw the suggestion
+		Field_DrawString( edit->consoleSuggestion + drawLen, x + (drawLen * size), y, fieldWidth, prestep, fieldWidth, size, showCursor, noColorEscape, COLOR_CYAN );
 	}
 
 	// draw the cursor
@@ -138,7 +151,8 @@ static void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int 
 			cursorChar = 10;
 		}
 
-		i = drawLen - strlen( str );
+		// i = drawLen - strlen( str );
+		i = 0;
 
 		if ( size == smallchar_width ) {
 			SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * size, y, cursorChar );
@@ -249,6 +263,12 @@ static void Field_KeyDownEvent( field_t *edit, int key ) {
 				} else {
 					edit->cursor++;
 				}
+			} else {
+				int suggestLen = strlen(edit->consoleSuggestion);
+				if(suggestLen > 0) {
+					edit->cursor = suggestLen;
+					memmove(edit->buffer, edit->consoleSuggestion, suggestLen);
+				}
 			}
 			break;
 
@@ -316,6 +336,10 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 			{
 				edit->scroll--;
 			}
+
+			if(historySuggestionsEnabled) {
+				Con_FindHistorySuggestion(edit);
+			}
 		}
 		return;
 	}
@@ -376,8 +400,13 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 		}
 		memmove( edit->buffer + edit->cursor + 1,
 			edit->buffer + edit->cursor, len + 1 - edit->cursor );
+
 		edit->buffer[edit->cursor] = ch;
 		edit->cursor++;
+
+		if(historySuggestionsEnabled) {
+			Con_FindHistorySuggestion(edit);
+		}
 	}
 
 
