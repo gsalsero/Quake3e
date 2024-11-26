@@ -898,6 +898,7 @@ typedef struct {
 	int		scroll;
 	int		widthInChars;
 	char	buffer[MAX_EDIT_LINE];
+	char	consoleSuggestion[MAX_EDIT_LINE];
 } field_t;
 
 void Field_Clear( field_t *edit );
@@ -911,6 +912,7 @@ void Con_ResetHistory( void );
 void Con_SaveField( const field_t *field );
 qboolean Con_HistoryGetPrev( field_t *field );
 qboolean Con_HistoryGetNext( field_t *field );
+qboolean Con_FindHistorySuggestion(field_t *field);
 
 /*
 ==============================================================

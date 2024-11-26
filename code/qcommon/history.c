@@ -94,6 +94,38 @@ qboolean Con_HistoryGetPrev( field_t *field )
 	return bresult;
 }
 
+qboolean Con_FindHistorySuggestion(field_t *field)
+{
+	const char *startsWith = field->buffer;
+	int len = strlen(startsWith);
+	if(len > 0)
+	{
+		if (historyLoaded == qfalse)
+		{
+			historyLoaded = qtrue;
+			Con_LoadHistory();
+		}
+
+		for (int i = nextHistoryLine - 1; i > nextHistoryLine % COMMAND_HISTORY; i--)
+		{
+			int line = i % COMMAND_HISTORY;
+			const char* buffer = historyEditLines[line].buffer;
+			if (buffer[0] != '\0' &&
+				!Q_strncmp(buffer, startsWith, len))
+			{
+				strcpy(field->consoleSuggestion, buffer);
+
+				return qtrue;
+			}
+		}
+
+		return qfalse;
+	}
+
+	memset( field->consoleSuggestion, 0, sizeof( field->consoleSuggestion ) );
+
+	return qfalse;
+}
 
 /*
 ================
