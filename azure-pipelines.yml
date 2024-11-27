@@ -12,10 +12,17 @@ stages:
     - script: |
         make
       displayName: 'make quake3e'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: 'build/release-linux-x86_64/'
+        Contents: 'quake3e*'
+        TargetFolder: 'build/release-linux-x86_64/archive'
+        CleanTargetFolder: true
+        preserveTimestamp: true
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: build/release-linux-x86_64/quake3e*
-        includeRootFolder: true
+        rootFolderOrFile: build/release-linux-x86_64/archive
+        includeRootFolder: false
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-linux-x86_64-$(Build.BuildId).zip'
         replaceExistingArchive: true
@@ -46,11 +53,18 @@ stages:
         configuration: 'Release'
         maximumCpuCount: true
         msbuildArchitecture: 'x64'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: 'code\win32\msvc2017\output\'
+        Contents: '*.exe'
+        TargetFolder: 'code\win32\msvc2017\output\archive'
+        CleanTargetFolder: true
+        preserveTimestamp: true
 
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: code\win32\msvc2017\output\*.exe
-        includeRootFolder: true
+        rootFolderOrFile: code\win32\msvc2017\output\archive
+        includeRootFolder: false
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-directx-x64-$(Build.BuildId).zip'
         replaceExistingArchive: true
@@ -79,10 +93,18 @@ stages:
         configuration: 'Release'
         maximumCpuCount: true
         msbuildArchitecture: 'x64'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: 'code\win32\msvc2017\output\'
+        Contents: '*.exe'
+        TargetFolder: 'code\win32\msvc2017\output\archive'
+        CleanTargetFolder: true
+        preserveTimestamp: true
+
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: code\win32\msvc2017\output\*.exe
-        includeRootFolder: true
+        rootFolderOrFile: code\win32\msvc2017\output\archive
+        includeRootFolder: false
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-vulkan-x64-$(Build.BuildId).zip'
         replaceExistingArchive: true
