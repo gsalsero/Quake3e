@@ -14,7 +14,7 @@ stages:
       displayName: 'make quake3e'
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: build/release-linux-x86_64/
+        rootFolderOrFile: build/release-linux-x86_64/quake3e*
         includeRootFolder: true
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-linux-x86_64-$(Build.BuildId).zip'
@@ -49,7 +49,7 @@ stages:
 
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: code\win32\msvc2017\output
+        rootFolderOrFile: code\win32\msvc2017\output\*.exe
         includeRootFolder: true
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-directx-x64-$(Build.BuildId).zip'
@@ -81,7 +81,7 @@ stages:
         msbuildArchitecture: 'x64'
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: code\win32\msvc2017\output
+        rootFolderOrFile: code\win32\msvc2017\output\*.exe
         includeRootFolder: true
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-vulkan-x64-$(Build.BuildId).zip'
