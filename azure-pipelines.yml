@@ -103,13 +103,13 @@ stages:
               CleanTargetFolder: true
               preserveTimestamp: true
 
-            - powershell: |
-                cd code\win32\msvc2017\output\archive
-                Get-ChildItem -Filter *.exe | ForEach-Object {
-                    $newName = $_.BaseName + "-vulkan" + $_.Extension
-                    Rename-Item -Path $_.FullName -NewName $newName
-                }
-              displayName: "Rename files to end with -vulkan.exe"
+          - powershell: |
+              cd code\win32\msvc2017\output\archive
+              Get-ChildItem -Filter *.exe | ForEach-Object {
+                  $newName = $_.BaseName + "-vulkan" + $_.Extension
+                  Rename-Item -Path $_.FullName -NewName $newName
+              }
+            displayName: "Rename files to end with -vulkan.exe"
           - task: ArchiveFiles@2
             inputs:
               rootFolderOrFile: code\win32\msvc2017\output\archive
