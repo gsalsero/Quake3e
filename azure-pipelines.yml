@@ -106,10 +106,13 @@ stages:
           - powershell: |
               cd code\win32\msvc2017\output\archive
               Get-ChildItem -Filter *.exe | ForEach-Object {
-                  $newName = $_.BaseName + "-vulkan" + $_.Extension
-                  Rename-Item -Path $_.FullName -NewName $newName
+                  if ($_.Name -match "^(quake3e)(\.ded)?(\.x64\.exe)$") {
+                      $newName = $matches[1] + "-vulkan" + $matches[2] + $matches[3]
+                      Rename-Item -Path $_.FullName -NewName $newName
+                  }
               }
-            displayName: "Rename files to end with -vulkan.exe"
+            displayName: "Rename files to end with -vulkan.x64.exe"
+
           - task: ArchiveFiles@2
             inputs:
               rootFolderOrFile: code\win32\msvc2017\output\archive
