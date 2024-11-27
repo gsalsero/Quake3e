@@ -106,15 +106,12 @@ qboolean Con_FindHistorySuggestion(field_t *field)
 			Con_LoadHistory();
 		}
 
-		for (int i = nextHistoryLine - 1; i > nextHistoryLine % COMMAND_HISTORY; i--)
-		{
-			int line = i % COMMAND_HISTORY;
+		for (int i = 0; i < COMMAND_HISTORY; i++) {
+			int line = (nextHistoryLine - 1 - i + COMMAND_HISTORY) % COMMAND_HISTORY;
 			const char* buffer = historyEditLines[line].buffer;
-			if (buffer[0] != '\0' &&
-				!Q_strncmp(buffer, startsWith, len))
-			{
-				strcpy(field->consoleSuggestion, buffer);
 
+			if (buffer[0] != '\0' && !Q_strncmp(buffer, startsWith, len)) {
+				strcpy(field->consoleSuggestion, buffer);
 				return qtrue;
 			}
 		}
