@@ -343,17 +343,53 @@ void floating_point_exception_handler( int whatever )
 	signal( SIGFPE, floating_point_exception_handler );
 }
 
+void moveCursorRight(int count)
+{
+	for (int i = 0; i < count; i++) {
+		write(STDOUT_FILENO, "\033[C", 3); 
+	}	
+}
+
+void moveCursorLeft(int count)
+{
+	for (int i = 0; i < count; i++) {
+		write(STDOUT_FILENO, "\033[D", 3); 
+	}	
+}
+
+void clearToEndOfLine( void )
+{
+	write(STDOUT_FILENO, "\033[K", 3);
+}
+
+void clearSuggestion( void )
+{
+	int clearLength = strlen(tty_con.consoleSuggestion) - strlen(tty_con.buffer);
+	if(clearLength <= 0)
+	{
+		return;
+	}
+
+	int remaining_chars = strlen(&tty_con.buffer[tty_con.cursor]);
+	moveCursorRight(remaining_chars);
+
+	clearToEndOfLine();
+
+	moveCursorLeft(remaining_chars);
+}
+
 void applyConsoleSuggestion( void )
 {
+	clearSuggestion();
 	Con_FindHistorySuggestion(&tty_con);
 
 	if(strlen(tty_con.consoleSuggestion) > 0)
 	{
-		// Save the cursor position
-		system("tput sc");
+		// Move the terminal cursor to the end of the buffer
+		int remaining_chars = strlen(&tty_con.buffer[tty_con.cursor]);
+		moveCursorRight(remaining_chars);
 
-		// Clear the line
-		write(STDOUT_FILENO, "\033[K", 3);
+		clearToEndOfLine();
 
 		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
 		// Set text color to grey
@@ -361,26 +397,8 @@ void applyConsoleSuggestion( void )
 		write(STDOUT_FILENO, suggestion, strlen(suggestion));
 		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
 
-		// Restore the cursor position
-		system("tput rc");
+		moveCursorLeft(remaining_chars + strlen(suggestion));
 	}
-}
-
-void clearSuggestion( void )
-{
-	int clearLength = strlen(tty_con.consoleSuggestion) - strlen(tty_con.buffer);
-	char spaces[clearLength];
-	memset(spaces, ' ', clearLength);
-	spaces[clearLength] = '\0';
-
-	// Save the cursor position
-	system("tput sc");
-
-	// Clear the line
-	write(STDOUT_FILENO, spaces, clearLength);
-
-	// Restore the cursor position
-	system("tput rc");
 }
 
 // initialize the console input (tty mode if wanted and possible)
@@ -490,9 +508,23 @@ char *Sys_ConsoleInput( void )
 				if (tty_con.cursor > 0)
 				{
 					tty_con.cursor--;
-					tty_con.buffer[tty_con.cursor] = '\0';
+					memmove(&tty_con.buffer[tty_con.cursor], &tty_con.buffer[tty_con.cursor + 1], strlen(&tty_con.buffer[tty_con.cursor + 1]) + 1);
+					
+					// Move the terminal cursor back one position
 					tty_Back();
-
+					
+					// Print the rest of the buffer from the cursor position
+					write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]));
+					
+					// Clear the remaining character at the end
+					write(STDOUT_FILENO, " ", 1);
+					
+					// Move the terminal cursor back to the correct position
+					int remaining_chars = strlen(&tty_con.buffer[tty_con.cursor]);
+					for (int i = 0; i <= remaining_chars; i++) {
+						write(STDOUT_FILENO, "\033[D", 3); // Move the cursor left
+					}
+					
 					applyConsoleSuggestion();
 				}
 				return NULL;
@@ -555,9 +587,22 @@ char *Sys_ConsoleInput( void )
 								return NULL;
 								break;
 							case 'C': // right
-							case 'D': // left
+								if (tty_con.cursor < strlen(tty_con.buffer)) {
+									tty_con.cursor++;
+									write(STDOUT_FILENO, "\033[C", 3); // Move the cursor right
+								}
+								break;
+							case 'D': 
+							    if(tty_con.cursor > 0) 
+								{
+									tty_con.cursor--;
+									write(STDOUT_FILENO, "\033[D", 3); // Move the cursor left
+								}
+								return NULL;
+								break;
 							//case 'H': // home
 							//case 'F': // end
+							default:
 								return NULL;
 							}
 						}
@@ -581,12 +626,22 @@ char *Sys_ConsoleInput( void )
 			}
 			if ( tty_con.cursor >= sizeof( text ) - 1 )
 				return NULL;
-			// push regular character
-			tty_con.buffer[ tty_con.cursor ] = key;
-			tty_con.cursor++;
-			// print the current line (this is differential)
-			write(STDOUT_FILENO, &key, 1);
-			applyConsoleSuggestion();
+			// Push regular character
+			if (tty_con.cursor < sizeof(tty_con.buffer) - 1) {
+				// Shift characters to the right
+				memmove(&tty_con.buffer[tty_con.cursor + 1], &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]) + 1);
+				
+				// Insert the new character
+				tty_con.buffer[tty_con.cursor] = key;
+				tty_con.cursor++;
+				
+				// Print the current line from the cursor position
+				write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor - 1], strlen(&tty_con.buffer[tty_con.cursor - 1]));
+
+				moveCursorLeft(strlen(&tty_con.buffer[tty_con.cursor - 1]) - 1);			
+
+				applyConsoleSuggestion();
+			}
 		}
 		return NULL;
 	}
