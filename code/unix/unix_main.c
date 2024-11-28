@@ -364,41 +364,35 @@ void clearToEndOfLine( void )
 
 void clearSuggestion( void )
 {
-	int clearLength = strlen(tty_con.consoleSuggestion) - strlen(tty_con.buffer);
-	if(clearLength <= 0)
-	{
-		return;
-	}
-
-	int remaining_chars = strlen(&tty_con.buffer[tty_con.cursor]);
-	moveCursorRight(remaining_chars);
+	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
+	moveCursorRight(cursorOffset);
 
 	clearToEndOfLine();
 
-	moveCursorLeft(remaining_chars);
+	moveCursorLeft(cursorOffset);
 }
 
 void applyConsoleSuggestion( void )
 {
-	clearSuggestion();
 	Con_FindHistorySuggestion(&tty_con);
+
+	// clear the current suggestion
+	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
+	moveCursorRight(cursorOffset);
+	clearToEndOfLine();
 
 	if(strlen(tty_con.consoleSuggestion) > 0)
 	{
-		// Move the terminal cursor to the end of the buffer
-		int remaining_chars = strlen(&tty_con.buffer[tty_con.cursor]);
-		moveCursorRight(remaining_chars);
-
-		clearToEndOfLine();
-
 		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
 		// Set text color to grey
 		write(STDOUT_FILENO, "\033[90m", 5);
 		write(STDOUT_FILENO, suggestion, strlen(suggestion));
 		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
 
-		moveCursorLeft(remaining_chars + strlen(suggestion));
+		cursorOffset += strlen(suggestion);
 	}
+
+	moveCursorLeft(cursorOffset);
 }
 
 // initialize the console input (tty mode if wanted and possible)
