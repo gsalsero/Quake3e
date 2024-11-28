@@ -136,7 +136,8 @@ static void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int 
 
 	if(strlen(edit->consoleSuggestion) > drawLen) {
 		// draw the suggestion
-		Field_DrawString( edit->consoleSuggestion + drawLen, x + (drawLen * size), y, fieldWidth, prestep, fieldWidth, size, showCursor, noColorEscape, COLOR_CYAN );
+		char suggestColor = 'z'; // grey, see g_color_table in q_math.c
+		Field_DrawString( edit->consoleSuggestion + drawLen, x + (drawLen * size), y, fieldWidth, prestep, fieldWidth, size, showCursor, noColorEscape, suggestColor );
 	}
 
 	// draw the cursor
