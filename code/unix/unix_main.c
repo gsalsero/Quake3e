@@ -585,6 +585,15 @@ char *Sys_ConsoleInput( void )
 									tty_con.cursor++;
 									write(STDOUT_FILENO, "\033[C", 3); // Move the cursor right
 								}
+								else
+								{
+									int suggestLen = strlen(tty_con.consoleSuggestion);
+									if(suggestLen > 0) {
+										memmove(tty_con.buffer, tty_con.consoleSuggestion, suggestLen);
+										write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]));
+										tty_con.cursor = suggestLen;
+									}
+								}
 								break;
 							case 'D': 
 							    if(tty_con.cursor > 0) 
