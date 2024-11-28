@@ -343,6 +343,45 @@ void floating_point_exception_handler( int whatever )
 	signal( SIGFPE, floating_point_exception_handler );
 }
 
+void applyConsoleSuggestion( void )
+{
+	Con_FindHistorySuggestion(&tty_con);
+
+	if(strlen(tty_con.consoleSuggestion) > 0)
+	{
+		// Save the cursor position
+		system("tput sc");
+
+		// Clear the line
+		write(STDOUT_FILENO, "\033[K", 3);
+
+		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
+		// Set text color to grey
+		write(STDOUT_FILENO, "\033[90m", 5);
+		write(STDOUT_FILENO, suggestion, strlen(suggestion));
+		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
+
+		// Restore the cursor position
+		system("tput rc");
+	}
+}
+
+void clearSuggestion( void )
+{
+	int clearLength = strlen(tty_con.consoleSuggestion) - strlen(tty_con.buffer);
+	char spaces[clearLength];
+	memset(spaces, ' ', clearLength);
+	spaces[clearLength] = '\0';
+
+	// Save the cursor position
+	system("tput sc");
+
+	// Clear the line
+	write(STDOUT_FILENO, spaces, clearLength);
+
+	// Restore the cursor position
+	system("tput rc");
+}
 
 // initialize the console input (tty mode if wanted and possible)
 // warning: might be called from signal handler
@@ -453,6 +492,8 @@ char *Sys_ConsoleInput( void )
 					tty_con.cursor--;
 					tty_con.buffer[tty_con.cursor] = '\0';
 					tty_Back();
+
+					applyConsoleSuggestion();
 				}
 				return NULL;
 			}
@@ -468,6 +509,7 @@ char *Sys_ConsoleInput( void )
 					while ( *s == '\\' || *s == '/' ) // skip leading slashes
 						s++;
 					Q_strncpyz( text, s, sizeof( text ) );
+					clearSuggestion();
 					Field_Clear( &tty_con );
 					write( STDOUT_FILENO, "\n]", 2 );
 					return text;
@@ -543,7 +585,8 @@ char *Sys_ConsoleInput( void )
 			tty_con.buffer[ tty_con.cursor ] = key;
 			tty_con.cursor++;
 			// print the current line (this is differential)
-			write( STDOUT_FILENO, &key, 1 );
+			write(STDOUT_FILENO, &key, 1);
+			applyConsoleSuggestion();
 		}
 		return NULL;
 	}
