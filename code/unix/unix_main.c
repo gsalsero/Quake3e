@@ -343,6 +343,22 @@ void floating_point_exception_handler( int whatever )
 	signal( SIGFPE, floating_point_exception_handler );
 }
 
+void moveCursorRight(int count)
+{
+    int len = strlen(tty_con.buffer);
+    for (int i = 0; i < count && tty_con.cursor < len; i++) {
+        tty_con.cursor++;
+        write(STDOUT_FILENO, "\033[C", 3);
+    }
+}
+
+void moveCursorLeft(int count)
+{
+    for (int i = 0; i < count && tty_con.cursor > 0; i++) {
+        tty_con.cursor--;
+        write(STDOUT_FILENO, "\033[D", 3);
+    }
+}
 
 // initialize the console input (tty mode if wanted and possible)
 // warning: might be called from signal handler
@@ -560,10 +576,23 @@ char *Sys_ConsoleInput( void )
 					return NULL;
 				}
 
+				if (key == 1) // Ctrl+A
+				{
+					moveCursorLeft(tty_con.cursor);
+					return NULL;
+				}
+
+				if (key == 5) // Ctrl+E
+				{
+					moveCursorRight(strlen(&tty_con.buffer[tty_con.cursor]));
+					return NULL;
+				}
+
 				Com_DPrintf( "dropping ISCTL sequence: %d, tty_erase: %d\n", key, tty_erase );
 				tty_FlushIn();
 				return NULL;
 			}
+
 			if ( tty_con.cursor >= sizeof( text ) - 1 )
 				return NULL;
 			// Push regular character
