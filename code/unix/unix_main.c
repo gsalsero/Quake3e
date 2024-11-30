@@ -224,6 +224,12 @@ void tty_Left(int count)
     }
 }
 
+void tty_ClearToEnd( void )
+{
+	write(STDOUT_FILENO, "\033[K", 3);
+}
+
+
 // never exit without calling this, or your terminal will be left in a pretty bad state
 void Sys_ConsoleInputShutdown( void )
 {
@@ -356,17 +362,12 @@ void floating_point_exception_handler( int whatever )
 	signal( SIGFPE, floating_point_exception_handler );
 }
 
-void clearToEndOfLine( void )
-{
-	write(STDOUT_FILENO, "\033[K", 3);
-}
-
 void clearSuggestion( void )
 {
 	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
 	tty_Right(cursorOffset);
 
-	clearToEndOfLine();
+	tty_ClearToEnd();
 
 	tty_Left(cursorOffset);
 }
@@ -378,7 +379,7 @@ void applyConsoleSuggestion( void )
 	// clear the current suggestion
 	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
 	tty_Right(cursorOffset);
-	clearToEndOfLine();
+	tty_ClearToEnd();
 
 	if(strlen(tty_con.consoleSuggestion) > 0)
 	{
