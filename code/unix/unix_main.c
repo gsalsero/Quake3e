@@ -201,6 +201,35 @@ void tty_Left(int count)
     }
 }
 
+void tty_ClearToEnd( void )
+{
+	write(STDOUT_FILENO, "\033[K", 3);
+}
+
+void applyConsoleSuggestion( void )
+{
+	Con_FindHistorySuggestion(&tty_con);
+
+	// clear the current suggestion
+	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
+	tty_Right(cursorOffset);
+	tty_ClearToEnd();
+
+	if(strlen(tty_con.consoleSuggestion) > 0)
+	{
+		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
+		// Set text color to grey
+		write(STDOUT_FILENO, "\033[90m", 5);
+		write(STDOUT_FILENO, suggestion, strlen(suggestion));
+		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
+
+		cursorOffset += strlen(suggestion);
+	}
+
+	tty_Left(cursorOffset);
+}
+
+
 // show the current line
 // FIXME TTimo need to position the cursor if needed??
 void tty_Show( void )
@@ -220,14 +249,10 @@ void tty_Show( void )
 			{
 				write( STDOUT_FILENO, tty_con.buffer, len);
 				tty_Left(len - tty_con.cursor);
+				applyConsoleSuggestion();
 			}
 		}
 	}
-}
-
-void tty_ClearToEnd( void )
-{
-	write(STDOUT_FILENO, "\033[K", 3);
 }
 
 // never exit without calling this, or your terminal will be left in a pretty bad state
@@ -368,29 +393,6 @@ void clearSuggestion( void )
 	tty_Right(cursorOffset);
 
 	tty_ClearToEnd();
-
-	tty_Left(cursorOffset);
-}
-
-void applyConsoleSuggestion( void )
-{
-	Con_FindHistorySuggestion(&tty_con);
-
-	// clear the current suggestion
-	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
-	tty_Right(cursorOffset);
-	tty_ClearToEnd();
-
-	if(strlen(tty_con.consoleSuggestion) > 0)
-	{
-		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
-		// Set text color to grey
-		write(STDOUT_FILENO, "\033[90m", 5);
-		write(STDOUT_FILENO, suggestion, strlen(suggestion));
-		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
-
-		cursorOffset += strlen(suggestion);
-	}
 
 	tty_Left(cursorOffset);
 }
@@ -616,6 +618,7 @@ char *Sys_ConsoleInput( void )
 					{
 						write( STDOUT_FILENO, tty_con.buffer, len);
 						tty_Left(len - tty_con.cursor);
+						applyConsoleSuggestion();
 					}
 					tty_FlushIn();
 					return NULL;
