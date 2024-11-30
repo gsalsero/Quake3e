@@ -346,9 +346,9 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 		while (newCursor >= 0 && edit->buffer[newCursor] != ' ' && edit->buffer[newCursor] != '/') {
 			newCursor--;
 		}
-	
+
 		newCursor++;
-	
+
 		memmove(edit->buffer + newCursor, edit->buffer + edit->cursor, len - edit->cursor + 1);
 
 		edit->cursor = newCursor;
