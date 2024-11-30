@@ -390,7 +390,6 @@ void applyConsoleSuggestion( void )
 		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
 
 		cursorOffset += strlen(suggestion);
-		tty_con.cursor = strlen(tty_con.consoleSuggestion);
 	}
 
 	moveCursorLeft(cursorOffset);
@@ -511,7 +510,6 @@ char *Sys_ConsoleInput( void )
 					// Print the rest of the buffer from the cursor position
 					int len = strlen(&tty_con.buffer[tty_con.cursor]);
 					write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], len);
-					tty_con.cursor += len;
 
 					// Clear the remaining character at the end
 					clearToEndOfLine();
@@ -654,7 +652,7 @@ char *Sys_ConsoleInput( void )
 				// Print the current line from the cursor position
 				int len = strlen(&tty_con.buffer[tty_con.cursor]);
 				write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], len);
-				tty_con.cursor = strlen(tty_con.buffer);
+				tty_con.cursor++;
 
 				moveCursorLeft(len - 1);
 
