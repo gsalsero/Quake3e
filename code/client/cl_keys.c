@@ -358,26 +358,7 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 	}
 
 	if ( ch == 'w' - 'a' + 1 ) {	// ctrl-w is delete word
-	    // space and / are word separators
-
-
-        // Ignore any padding at the end of the buffer
-		int newCursor = edit->cursor - 1;
-		while (newCursor >= 0 && (edit->buffer[newCursor] == ' ' || edit->buffer[newCursor] == '/')) {
-			newCursor--;
-		}
-
-		// Find the position of the last word
-		while (newCursor >= 0 && edit->buffer[newCursor] != ' ' && edit->buffer[newCursor] != '/') {
-			newCursor--;
-		}
-	
-		newCursor++;
-	
-		memmove(edit->buffer + newCursor, edit->buffer + edit->cursor, len - edit->cursor + 1);
-
-		edit->cursor = newCursor;
-
+		Field_DeleteWord(edit);
 		return;
 	}
 

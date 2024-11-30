@@ -638,6 +638,19 @@ char *Sys_ConsoleInput( void )
 					return NULL;
 				}
 
+				if(key == 23)
+				{
+					int len = strlen(tty_con.buffer);
+					Field_DeleteWord(&tty_con);
+
+					int newLen = strlen(tty_con.buffer);
+					for(int i = newLen; i < len; i++)
+					{
+						tty_Back();
+					}
+					applyConsoleSuggestion();
+				}
+
 				Com_DPrintf( "dropping ISCTL sequence: %d, tty_erase: %d\n", key, tty_erase );
 				tty_FlushIn();
 				return NULL;

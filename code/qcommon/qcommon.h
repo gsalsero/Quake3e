@@ -907,6 +907,7 @@ void Field_CompleteKeyname( void );
 void Field_CompleteKeyBind( int key );
 void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt, int flags );
 void Field_CompleteCommand( const char *cmd, qboolean doCommands, qboolean doCvars );
+void Field_DeleteWord(field_t * field);
 
 void Con_ResetHistory( void );
 void Con_SaveField( const field_t *field );
