@@ -345,17 +345,14 @@ void floating_point_exception_handler( int whatever )
 
 void moveCursorRight(int count)
 {
-    int len = strlen(tty_con.buffer);
-    for (int i = 0; i < count && tty_con.cursor < len; i++) {
-        tty_con.cursor++;
+    for (int i = 0; i < count; i++) {
         write(STDOUT_FILENO, "\033[C", 3);
     }
 }
 
 void moveCursorLeft(int count)
 {
-    for (int i = 0; i < count && tty_con.cursor > 0; i++) {
-        tty_con.cursor--;
+    for (int i = 0; i < count; i++) {
         write(STDOUT_FILENO, "\033[D", 3);
     }
 }
@@ -579,12 +576,14 @@ char *Sys_ConsoleInput( void )
 				if (key == 1) // Ctrl+A
 				{
 					moveCursorLeft(tty_con.cursor);
+					tty_con.cursor = 0;
 					return NULL;
 				}
 
 				if (key == 5) // Ctrl+E
 				{
 					moveCursorRight(strlen(&tty_con.buffer[tty_con.cursor]));
+					tty_con.cursor = strlen(tty_con.buffer);
 					return NULL;
 				}
 
