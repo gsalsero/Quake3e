@@ -533,6 +533,18 @@ char *Sys_ConsoleInput( void )
 					return NULL;
 				}
 
+				if(key == 23)
+				{
+					int len = strlen(tty_con.buffer);
+					Field_DeleteWord(&tty_con);
+
+					int newLen = strlen(tty_con.buffer);
+					for(int i = newLen; i < len; i++)
+					{
+						tty_Back();
+					}
+				}
+
 				Com_DPrintf( "dropping ISCTL sequence: %d, tty_erase: %d\n", key, tty_erase );
 				tty_FlushIn();
 				return NULL;
@@ -542,6 +554,8 @@ char *Sys_ConsoleInput( void )
 			// push regular character
 			tty_con.buffer[ tty_con.cursor ] = key;
 			tty_con.cursor++;
+			tty_con.buffer[tty_con.cursor] = 0;
+
 			// print the current line (this is differential)
 			write( STDOUT_FILENO, &key, 1 );
 		}

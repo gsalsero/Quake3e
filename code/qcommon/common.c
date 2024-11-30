@@ -4858,6 +4858,37 @@ void Field_AutoComplete( field_t *field )
 	Field_CompleteCommand( completionField->buffer, qtrue, qtrue );
 }
 
+qboolean isWordSeparator(char c) {
+    static const char *separators = "/={,}'\":@# \n|\t;\r<>";
+
+    if(strchr(separators, c) == NULL)
+		return qfalse;
+
+	return qtrue;
+}
+
+void Field_DeleteWord(field_t * field)
+{
+	// space and / are word separators
+	// Ignore any padding at the end of the buffer
+	int newCursor = field->cursor - 1;
+	while (newCursor >= 0 && isWordSeparator(field->buffer[newCursor])) {
+		newCursor--;
+	}
+
+	// Find the position of the last word
+	while (newCursor >= 0 && !isWordSeparator(field->buffer[newCursor])) {
+		newCursor--;
+	}
+
+	newCursor++;
+
+	int len = strlen(field->buffer);
+	memmove(field->buffer + newCursor, field->buffer + field->cursor, len - field->cursor + 1);
+
+	field->cursor = newCursor;
+}
+
 
 /*
 ==================
