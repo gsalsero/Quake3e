@@ -187,29 +187,6 @@ void tty_Hide( void )
 	ttycon_hide++;
 }
 
-
-// show the current line
-// FIXME TTimo need to position the cursor if needed??
-void tty_Show( void )
-{
-	if ( !ttycon_on )
-		return;
-
-	if ( ttycon_hide > 0 )
-	{
-		ttycon_hide--;
-		if ( ttycon_hide == 0 )
-		{
-			write( STDOUT_FILENO, "]", 1 ); // -EC-
-
-			if ( tty_con.cursor > 0 )
-			{
-				write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
-			}
-		}
-	}
-}
-
 void tty_Right(int count)
 {
     for (int i = 0; i < count; i++) {
@@ -227,6 +204,55 @@ void tty_Left(int count)
 void tty_ClearToEnd( void )
 {
 	write(STDOUT_FILENO, "\033[K", 3);
+}
+
+void applyConsoleSuggestion( void )
+{
+	Con_FindHistorySuggestion(&tty_con);
+
+	// clear the current suggestion
+	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
+	tty_Right(cursorOffset);
+	tty_ClearToEnd();
+
+	if(strlen(tty_con.consoleSuggestion) > 0)
+	{
+		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
+		// Set text color to grey
+		write(STDOUT_FILENO, "\033[90m", 5);
+		write(STDOUT_FILENO, suggestion, strlen(suggestion));
+		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
+
+		cursorOffset += strlen(suggestion);
+	}
+
+	tty_Left(cursorOffset);
+}
+
+
+// show the current line
+// FIXME TTimo need to position the cursor if needed??
+void tty_Show( void )
+{
+	if ( !ttycon_on )
+		return;
+
+	if ( ttycon_hide > 0 )
+	{
+		ttycon_hide--;
+		if ( ttycon_hide == 0 )
+		{
+			write( STDOUT_FILENO, "]", 1 ); // -EC-
+
+			int len = strlen(tty_con.buffer);
+			if ( len > 0 )
+			{
+				write( STDOUT_FILENO, tty_con.buffer, len);
+				tty_Left(len - tty_con.cursor);
+				applyConsoleSuggestion();
+			}
+		}
+	}
 }
 
 // never exit without calling this, or your terminal will be left in a pretty bad state
@@ -367,29 +393,6 @@ void clearSuggestion( void )
 	tty_Right(cursorOffset);
 
 	tty_ClearToEnd();
-
-	tty_Left(cursorOffset);
-}
-
-void applyConsoleSuggestion( void )
-{
-	Con_FindHistorySuggestion(&tty_con);
-
-	// clear the current suggestion
-	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
-	tty_Right(cursorOffset);
-	tty_ClearToEnd();
-
-	if(strlen(tty_con.consoleSuggestion) > 0)
-	{
-		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
-		// Set text color to grey
-		write(STDOUT_FILENO, "\033[90m", 5);
-		write(STDOUT_FILENO, suggestion, strlen(suggestion));
-		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
-
-		cursorOffset += strlen(suggestion);
-	}
 
 	tty_Left(cursorOffset);
 }
@@ -610,9 +613,12 @@ char *Sys_ConsoleInput( void )
 				if ( key == 12 ) // clear teaminal
 				{
 					write( STDOUT_FILENO, "\ec]", 3 );
-					if ( tty_con.cursor )
+					int len = strlen(tty_con.buffer);
+					if ( len > 0 )
 					{
-						write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+						write( STDOUT_FILENO, tty_con.buffer, len);
+						tty_Left(len - tty_con.cursor);
+						applyConsoleSuggestion();
 					}
 					tty_FlushIn();
 					return NULL;
