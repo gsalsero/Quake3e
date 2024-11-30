@@ -187,6 +187,19 @@ void tty_Hide( void )
 	ttycon_hide++;
 }
 
+void tty_Right(int count)
+{
+    for (int i = 0; i < count; i++) {
+        write(STDOUT_FILENO, "\033[C", 3);
+    }
+}
+
+void tty_Left(int count)
+{
+    for (int i = 0; i < count; i++) {
+        write(STDOUT_FILENO, "\033[D", 3);
+    }
+}
 
 // show the current line
 // FIXME TTimo need to position the cursor if needed??
@@ -202,26 +215,14 @@ void tty_Show( void )
 		{
 			write( STDOUT_FILENO, "]", 1 ); // -EC-
 
-			if ( tty_con.cursor > 0 )
+			int len = strlen(tty_con.buffer);
+			if ( len > 0 )
 			{
-				write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+				write( STDOUT_FILENO, tty_con.buffer, len);
+				tty_Left(len - tty_con.cursor);
 			}
 		}
 	}
-}
-
-void tty_Right(int count)
-{
-    for (int i = 0; i < count; i++) {
-        write(STDOUT_FILENO, "\033[C", 3);
-    }
-}
-
-void tty_Left(int count)
-{
-    for (int i = 0; i < count; i++) {
-        write(STDOUT_FILENO, "\033[D", 3);
-    }
 }
 
 void tty_ClearToEnd( void )
@@ -610,9 +611,11 @@ char *Sys_ConsoleInput( void )
 				if ( key == 12 ) // clear teaminal
 				{
 					write( STDOUT_FILENO, "\ec]", 3 );
-					if ( tty_con.cursor )
+					int len = strlen(tty_con.buffer);
+					if ( len > 0 )
 					{
-						write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+						write( STDOUT_FILENO, tty_con.buffer, len);
+						tty_Left(len - tty_con.cursor);
 					}
 					tty_FlushIn();
 					return NULL;
