@@ -623,10 +623,25 @@ char *Sys_ConsoleInput( void )
 					return NULL;
 				}
 
+				if (key == 1) // Ctrl+A
+				{
+					moveCursorLeft(tty_con.cursor);
+					tty_con.cursor = 0;
+					return NULL;
+				}
+
+				if (key == 5) // Ctrl+E
+				{
+					moveCursorRight(strlen(&tty_con.buffer[tty_con.cursor]));
+					tty_con.cursor = strlen(tty_con.buffer);
+					return NULL;
+				}
+
 				Com_DPrintf( "dropping ISCTL sequence: %d, tty_erase: %d\n", key, tty_erase );
 				tty_FlushIn();
 				return NULL;
 			}
+
 			if ( tty_con.cursor >= sizeof( text ) - 1 )
 				return NULL;
 			// Push regular character
