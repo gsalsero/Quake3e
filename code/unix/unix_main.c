@@ -229,7 +229,6 @@ void tty_ClearToEnd( void )
 	write(STDOUT_FILENO, "\033[K", 3);
 }
 
-
 // never exit without calling this, or your terminal will be left in a pretty bad state
 void Sys_ConsoleInputShutdown( void )
 {
@@ -501,19 +500,19 @@ char *Sys_ConsoleInput( void )
 			{
 				if (tty_con.cursor > 0)
 				{
+					memmove(&tty_con.buffer[tty_con.cursor - 1], &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]) + 1);
+
+ 					// Move the terminal cursor back one position
+ 					tty_Back();
 					tty_con.cursor--;
-					memmove(&tty_con.buffer[tty_con.cursor], &tty_con.buffer[tty_con.cursor + 1], strlen(&tty_con.buffer[tty_con.cursor + 1]) + 1);
+
+ 					// Print the rest of the buffer from the cursor position
+					int len = strlen(&tty_con.buffer[tty_con.cursor]);
+					write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], len);
+
+					tty_ClearToEnd();
 					
-					// Move the terminal cursor back one position
-					tty_Back();
-					
-					// Print the rest of the buffer from the cursor position
-					write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]));
-					
-					// Clear the remaining character at the end
-					write(STDOUT_FILENO, " ", 1);
-					
-					tty_Left(strlen(&tty_con.buffer[tty_con.cursor]) + 1);
+					tty_Left(len);
 
 					applyConsoleSuggestion();
 				}
@@ -645,14 +644,14 @@ char *Sys_ConsoleInput( void )
 				// Shift characters to the right
 				memmove(&tty_con.buffer[tty_con.cursor + 1], &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]) + 1);
 				
-				// Insert the new character
-				tty_con.buffer[tty_con.cursor] = key;
+ 				// Insert the new character
+ 				tty_con.buffer[tty_con.cursor] = key;
+
+				int len = strlen(&tty_con.buffer[tty_con.cursor]);
+				write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], len);
 				tty_con.cursor++;
-				
-				// Print the current line from the cursor position
-				write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor - 1], strlen(&tty_con.buffer[tty_con.cursor - 1]));
-				
-				tty_Left(strlen(&tty_con.buffer[tty_con.cursor]));
+
+				tty_Left(len - 1);
 
 				applyConsoleSuggestion();
 			}
