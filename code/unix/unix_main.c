@@ -533,7 +533,7 @@ char *Sys_ConsoleInput( void )
 					return NULL;
 				}
 
-				if(key == 23)
+				if(key == 23) // ctrl-w
 				{
 					int len = strlen(tty_con.buffer);
 					Field_DeleteWord(&tty_con);
