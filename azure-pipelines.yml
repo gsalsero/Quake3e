@@ -1,10 +1,6 @@
 trigger:
   - azure-pipelines-all
 
-variables:
-  # Define global variables
-  ISO_DATE: '' # Will be dynamically set
-
 stages:
   - stage: initialize
     displayName: "Initialize Variables"
