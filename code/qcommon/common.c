@@ -3736,6 +3736,17 @@ static void Com_SetAffinityMask( const char *str )
 }
 #endif // USE_AFFINITY_MASK
 
+#define STRINGIFY(x) STRING(x)
+
+#ifndef BUILD_ID
+#define BUILD_ID unknown
+#endif
+
+#ifndef ISO_DATE
+#define DATE_TIME __DATE__ " " __TIME__
+#else
+#define DATE_TIME STRINGIFY(ISO_DATE)
+#endif
 
 /*
 =================
@@ -3749,7 +3760,7 @@ void Com_Init( char *commandLine ) {
 	// get the initial time base
 	Sys_Milliseconds();
 
-	Com_Printf( "%s %s %s %s\n", SVN_VERSION, PLATFORM_STRING, __DATE__, __TIME__ );
+	Com_Printf( "%s %s %s Build ID: %s\n", SVN_VERSION, PLATFORM_STRING, DATE_TIME, STRINGIFY(BUILD_ID) );
 
 	if ( Q_setjmp( abortframe ) ) {
 		Sys_Error ("Error during initialization");
