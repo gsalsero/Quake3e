@@ -29,6 +29,7 @@ stages:
         container: gsalsero/quake3e-linux-builder:latest
         steps:
           - script: |
+              echo "ISO_DATE: $ISO_DATE"
               make CFLAGS="$CFLAGS -DISO_DATE=\"$ISO_DATE\" -DBUILD_ID=$(Build.BuildId)"
             displayName: "Build quake3e"
           - task: CopyFiles@2
