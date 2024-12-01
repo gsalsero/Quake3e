@@ -22,6 +22,8 @@ stages:
 
   - stage: linux
     dependsOn: initialize
+    variables:
+      ISO_DATE: $[ dependencies.initialize.outputs['set_variables.ISO_DATE'] ] # Reference output variable
     jobs:
       - job: build
         pool:
@@ -55,6 +57,9 @@ stages:
 
   - stage: windows64
     dependsOn: initialize
+    variables:
+      ISO_DATE: $[ dependencies.initialize.outputs['set_variables.ISO_DATE'] ] # Reference output variable
+
     jobs:
       # Standard DirectX Build
       - job: build_directx
