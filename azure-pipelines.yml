@@ -10,6 +10,8 @@ stages:
     displayName: "Initialize Variables"
     jobs:
       - job: set_variables
+        pool:
+          vmImage: "ubuntu-latest"
         steps:
           - script: |
               ISO_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
