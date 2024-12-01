@@ -359,6 +359,9 @@ static void Field_CharEvent( field_t *edit, int ch ) {
 
 	if ( ch == 'w' - 'a' + 1 ) {	// ctrl-w is delete word
 		Field_DeleteWord(edit);
+		if(historySuggestionsEnabled) {
+			Con_FindHistorySuggestion(edit);
+		}
 		return;
 	}
 
