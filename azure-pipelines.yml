@@ -56,9 +56,47 @@ stages:
       ISO_DATE: $[ stageDependencies.initialize.set_variables.outputs['iso_date.ISO_DATE'] ] # Reference output variable
 
     jobs:
-      # Standard DirectX Build
-      - job: build_directx
-        displayName: "Build quake3e - DirectX Backend"
+      - job: build_server
+        displayName: "Build quake3e - server"
+        pool:
+          vmImage: "windows-latest"
+        steps:
+          - powershell: |
+              Get-ChildItem -Path 'code\win32\msvc2017' -Recurse -Filter *.vcxproj |
+              ForEach-Object {
+                  (Get-Content $_.FullName) -replace '<PlatformToolset>v141</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>' | Set-Content $_.FullName
+              }
+            displayName: "Retarget platform toolset to v143"
+          - task: VSBuild@1
+            inputs:
+              solution: "code/win32/msvc2017/quake3e-ded.vcxproj"
+              platform: "x64"
+              configuration: "Release"
+              maximumCpuCount: true
+              msbuildArchitecture: "x64"
+            displayName: "Quake3e Server"
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'code\win32\msvc2017\output\'
+              Contents: "*.exe"
+              TargetFolder: 'code\win32\msvc2017\output\archive'
+              CleanTargetFolder: true
+              preserveTimestamp: true
+
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: code\win32\msvc2017\output\archive
+              includeRootFolder: false
+              archiveType: "zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/quake3e-release-win-server-x64-$(Build.BuildId).zip"
+              replaceExistingArchive: true
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)"
+              publishLocation: "pipeline"
+
+      - job: build_opengl
+        displayName: "Build quake3e - OpenGL"
         pool:
           vmImage: "windows-latest"
         steps:
@@ -98,7 +136,7 @@ stages:
               rootFolderOrFile: code\win32\msvc2017\output\archive
               includeRootFolder: false
               archiveType: "zip"
-              archiveFile: "$(Build.ArtifactStagingDirectory)/quake3e-release-win-directx-x64-$(Build.BuildId).zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/quake3e-release-win-opengl-x64-$(Build.BuildId).zip"
               replaceExistingArchive: true
           - task: PublishPipelineArtifact@1
             inputs:
