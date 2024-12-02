@@ -67,12 +67,7 @@ stages:
 
           - script: |
               # Build and install the project
-              C:\msys64\usr\bin\bash.exe -lc "
-                MSYS_SOURCE_DIR=\$(cygpath -u '$(Build.SourcesDirectory)') &&
-                INSTALL_DIR=\$(cygpath -u '$(Build.ArtifactStagingDirectory)/install') &&
-                export MSYSTEM=MINGW64 &&
-                cd \"\$MSYS_SOURCE_DIR\" &&
-                make install -j$(nproc) ARCH=x86_64 CC=gcc CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\" DESTDIR=\"$INSTALL_DIR\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0"
+              C:\msys64\usr\bin\bash.exe -lc "MSYS_SOURCE_DIR=\$(cygpath -u '$(Build.SourcesDirectory)'); INSTALL_DIR=\$(cygpath -u '$(Build.ArtifactStagingDirectory)/install'); export MSYSTEM=MINGW64; cd \"\$MSYS_SOURCE_DIR\"; make install -j$(nproc) ARCH=x86_64 CC=gcc CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\" DESTDIR=\"$INSTALL_DIR\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0"
 
             displayName: "Build quake3e with MINGW64"
 
