@@ -66,10 +66,16 @@ stages:
             displayName: "Install build dependencies"
 
           - script: |
+              # Convert Windows paths to MSYS2-compatible paths
               MSYS_SOURCE_DIR=$(C:\msys64\usr\bin\bash.exe -lc "cygpath -u '$(Build.SourcesDirectory)'")
+              INSTALL_DIR=$(C:\msys64\usr\bin\bash.exe -lc "cygpath -u '$(Build.ArtifactStagingDirectory)/install'")
 
-              # Build the project in the MINGW64 environment
-              C:\msys64\usr\bin\bash.exe -lc "MSYSTEM=MINGW64; export MSYSTEM; cd \"$MSYS_SOURCE_DIR\" && make CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\""
+              # Build and install the project
+              C:\msys64\usr\bin\bash.exe -lc "
+                MSYSTEM=MINGW64; export MSYSTEM;
+                cd \"$MSYS_SOURCE_DIR\" &&
+                make install DESTDIR=\"$INSTALL_DIR\" -j$(nproc) ARCH=x86_64 CC=gcc CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0"
+
             displayName: "Build quake3e with MINGW64"
 
           - task: CopyFiles@2
