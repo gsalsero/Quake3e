@@ -67,6 +67,8 @@ stages:
 
           - script: |
               # Build and install the project
+              C:\msys64\usr\bin\bash.exe -lc "echo '### sources ###'; cygpath -u '$(Build.SourcesDirectory)'; echo '### staging ###'; cygpath -u '$(Build.ArtifactStagingDirectory)/install'"
+              C:\msys64\usr\bin\bash.exe -lc "export MSYS_SOURCE_DIR=\$(cygpath -u '$(Build.SourcesDirectory)'); export INSTALL_DIR=\$(cygpath -u '$(Build.ArtifactStagingDirectory)/install')"
               C:\msys64\usr\bin\bash.exe -lc "echo '##### pwd ####'; pwd; echo '#### env ####'; env"
               C:\msys64\usr\bin\bash.exe -lc "export MSYSTEM=MINGW64; make install ARCH=x86_64 CC=gcc CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\" DESTDIR=bin USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0"
               # C:\msys64\usr\bin\bash.exe -lc "MSYS_SOURCE_DIR=\$(cygpath -u '$(Build.SourcesDirectory)'); INSTALL_DIR=\$(cygpath -u '$(Build.ArtifactStagingDirectory)/install'); export MSYSTEM=MINGW64; cd \"\$MSYS_SOURCE_DIR\"; make install -j$(nproc) ARCH=x86_64 CC=gcc CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\" DESTDIR=\"$INSTALL_DIR\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0"
