@@ -70,12 +70,21 @@ stages:
             displayName: "Retarget platform toolset to v143"
           - task: VSBuild@1
             inputs:
-              solution: "code/win32/msvc2017/quake3e.sln"
-              msbuildArgs: "/p:ISO_DATE=$(ISO_DATE) /p:BUILD_ID=$(Build.BuildId)"
-              platform: "Win64"
+              solution: "code/win32/msvc2017/renderer.vcxproj"
+              platform: "x64"
               configuration: "Release"
               maximumCpuCount: true
               msbuildArchitecture: "x64"
+            displayName: "OpenGL Renderer"
+          - task: VSBuild@1
+            inputs:
+              solution: "code/win32/msvc2017/quake3e.vcxproj"
+              msbuildArgs: "-p:UseWasapi=USE_WASAPI=0"
+              platform: "x64"
+              configuration: "Release"
+              maximumCpuCount: true
+              msbuildArchitecture: "x64"
+            displayName: "OpenGL Quake3e"
           - task: CopyFiles@2
             inputs:
               SourceFolder: 'code\win32\msvc2017\output\'
@@ -115,14 +124,16 @@ stages:
               configuration: "Release"
               maximumCpuCount: true
               msbuildArchitecture: "x64"
+            displayName: "Vulkan Renderer"
           - task: VSBuild@1
             inputs:
               solution: "code/win32/msvc2017/quake3e.vcxproj"
-              msbuildArgs: "-p:TargetName=quake3e,UseWasapi=USE_WASAPI=0"
+              msbuildArgs: "-p:UseWasapi=USE_WASAPI=0"
               platform: "x64"
               configuration: "Release"
               maximumCpuCount: true
               msbuildArchitecture: "x64"
+            displayName: "Vulkan Quake3e"
 
           - task: CopyFiles@2
             inputs:
