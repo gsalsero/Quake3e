@@ -61,22 +61,14 @@ stages:
           vmImage: "windows-latest"
         steps:
           - script: |
-              # Install MSYS2 using Chocolatey
-              choco install msys2 --params "/NoUpdate"
-              refreshenv
-            displayName: "Install MSYS2"
-
-          - script: |
-              # Update MSYS2 and install build dependencies
-              C:\tools\msys64\usr\bin\bash -lc "pacman -Syu --noconfirm"
-              C:\tools\msys64\usr\bin\bash -lc "pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-i686-gcc"
+              # Update MSYS2 package manager and install dependencies
+              C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
+              C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-i686-gcc"
             displayName: "Install build dependencies"
 
           - script: |
-              # Set up MINGW64 environment and build the project
-              $Env:MSYSTEM = "MINGW64"
-              $Env:PATH += ";C:\tools\msys64\mingw64\bin"
-              C:\tools\msys64\usr\bin\bash -lc "cd /c/$(Build.SourcesDirectory) && make CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\""
+              # Build the project in the MINGW64 environment
+              C:\msys64\usr\bin\bash.exe -lc "MSYSTEM=MINGW64; export MSYSTEM; cd /c/$(Build.SourcesDirectory) && make CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\""
             displayName: "Build quake3e with MINGW64"
 
           - task: CopyFiles@2
