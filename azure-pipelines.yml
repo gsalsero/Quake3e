@@ -66,6 +66,8 @@ stages:
             displayName: "Install build dependencies"
 
           - script: |
+              $MSYS_SOURCE_DIR = & "C:\msys64\usr\bin\bash.exe" -lc "cygpath -u '$(Build.SourcesDirectory)'"
+              Write-Host "MSYS_SOURCE_DIR: $MSYS_SOURCE_DIR"
               # Build and install the project
               C:\msys64\usr\bin\bash.exe -lc "echo '### sources ###'; cygpath -u '$(Build.SourcesDirectory)'; echo '### staging ###'; cygpath -u '$(Build.ArtifactStagingDirectory)/install'"
               C:\msys64\usr\bin\bash.exe -lc "export MSYS_SOURCE_DIR=\$(cygpath -u '$(Build.SourcesDirectory)'); export INSTALL_DIR=\$(cygpath -u '$(Build.ArtifactStagingDirectory)/install')"
