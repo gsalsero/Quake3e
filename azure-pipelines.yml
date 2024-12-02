@@ -49,6 +49,61 @@ stages:
             inputs:
               targetPath: "$(Build.ArtifactStagingDirectory)"
               publishLocation: "pipeline"
+  - stage: mingw64
+    dependsOn: initialize
+    variables:
+      ISO_DATE: $[ stageDependencies.initialize.set_variables.outputs['iso_date.ISO_DATE'] ] # Reference output variable
+
+    jobs:
+      - job: build_mingw64
+        displayName: "Build quake3e - MINGW64"
+        pool:
+          vmImage: "windows-latest"
+        steps:
+          - script: |
+              # Install MSYS2 using Chocolatey
+              choco install msys2 --params "/NoUpdate"
+              refreshenv
+            displayName: "Install MSYS2"
+
+          - script: |
+              # Update MSYS2 and install build dependencies
+              C:\tools\msys64\usr\bin\bash -lc "pacman -Syu --noconfirm"
+              C:\tools\msys64\usr\bin\bash -lc "pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-i686-gcc"
+            displayName: "Install build dependencies"
+
+          - script: |
+              # Set up MINGW64 environment and build the project
+              $Env:MSYSTEM = "MINGW64"
+              $Env:PATH += ";C:\tools\msys64\mingw64\bin"
+              C:\tools\msys64\usr\bin\bash -lc "cd /c/$(Build.SourcesDirectory) && make CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\""
+            displayName: "Build quake3e with MINGW64"
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: "build/release-mingw64/"
+              Contents: |
+                quake3e.ded.x64.exe
+                quake3e.x64.exe
+              TargetFolder: "build/release-mingw64/archive"
+              CleanTargetFolder: true
+              preserveTimestamp: true
+            displayName: "Copy build files"
+
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: build/release-mingw64/archive
+              includeRootFolder: false
+              archiveType: "zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/quake3e-release-mingw64-$(Build.BuildId).zip"
+              replaceExistingArchive: true
+            displayName: "Archive build artifacts"
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)"
+              publishLocation: "pipeline"
+            displayName: "Publish build artifacts"
 
   - stage: windows64
     dependsOn: initialize
