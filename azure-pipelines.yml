@@ -85,9 +85,8 @@ stages:
                 echo '#### env ####'; env;
                 make --version;
                 export MSYSTEM=MINGW64;
-                export PATH=/mingw64/bin:\$PATH;
                 make --version;
-                gcc --version;
+                /mingw64/bin/gcc --version;
               "@
 
               # Build and install the project
