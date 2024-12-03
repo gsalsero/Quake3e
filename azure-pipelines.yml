@@ -61,7 +61,9 @@ stages:
           vmImage: "windows-latest"
         steps:
           - script: |
-              C:\msys64\usr\bin\bash.exe -lc './mingw-build.sh'
+              C:\msys64\usr\bin\bash.exe -lc 'echo "#### ls ####"; ls'
+              C:\msys64\usr\bin\bash.exe -lc 'echo "### pwd ####"; pwd'
+              C:\msys64\usr\bin\bash.exe -lc 'cd /d/a/1/s; ./mingw-build.sh'
             displayName: "shell script test"
 
           - script: |
