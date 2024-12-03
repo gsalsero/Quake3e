@@ -68,9 +68,9 @@ stages:
           - powershell: |
               & "C:\msys64\usr\bin\env" MSYSTEM=MINGW64 /usr/bin/bash -lc @"
                 echo '### CFLAGS ###'
-                echo \$(CFLAGS)
+                echo \"\$CFLAGS\""
                 echo '### SHELL ###'
-                echo \$(SHELL)
+                echo \"\$SHELL\"
                 echo '### env ####'
                 env
                 cd '$(Build.SourcesDirectory)'
