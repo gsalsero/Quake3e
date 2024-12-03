@@ -64,14 +64,23 @@ stages:
               C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
               C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm make mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc;"
             displayName: "Install build dependencies"
-            
+
+          # - script: |
+          #     C:\msys64\usr\bin\env MSYSTEM=MINGW64 /usr/bin/bash -lc "cd /c/$(Build.SourcesDirectory) && make CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\""
+          #   displayName: "Build quake3e with MINGW64"
           - script: |
-              # Set up MINGW64 environment and build the project
-              $Env:MSYSTEM = "MINGW64"
-              $Env:PATH += ";C:\msys64\mingw64\bin"
-              C:\msys64\usr\bin\bash -lc "cd /c/$(Build.SourcesDirectory) && make CFLAGS=\"$CFLAGS -DISO_DATE='$ISO_DATE' -DBUILD_ID=$(Build.BuildId)\""
-            displayName: "Build quake3e with MINGW64"
-          
+              # Install dependencies
+              C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
+              C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm make mingw-w64-x86_64-gcc mingw-w64-i686-gcc"
+
+              # Build and install using env to set MSYSTEM
+              C:\msys64\usr\bin\env MSYSTEM=MINGW64 /usr/bin/bash -lc "
+                echo '##### Current PATH #####';
+                echo \$PATH;
+                cd '$(Build.SourcesDirectory)';
+                make install ARCH=x86_64 CC=gcc CFLAGS=\"\$CFLAGS -DISO_DATE='$(ISO_DATE)' -DBUILD_ID=$(Build.BuildId)\" DESTDIR='$(Build.ArtifactStagingDirectory)/install' USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
+              "
+            displayName: "Build and install quake3e with MINGW64"          
 
           # - powershell: |
           #     # Convert Windows paths to MSYS2-compatible paths
