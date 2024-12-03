@@ -43,7 +43,7 @@ stages:
             inputs:
               targetPath: "$(Build.ArtifactStagingDirectory)"
               publishLocation: "pipeline"
-  - stage: mingw64
+  - stage: windows_msys2
     dependsOn: initialize
     variables:
       ISO_DATE: $[ stageDependencies.initialize.set_variables.outputs['iso_date.ISO_DATE'] ] # Reference output variable
@@ -79,7 +79,7 @@ stages:
               publishLocation: "pipeline"
             displayName: "Publish build artifacts"
 
-  - stage: windows64
+  - stage: windows_msvc
     dependsOn: initialize
     variables:
       ISO_DATE: $[ stageDependencies.initialize.set_variables.outputs['iso_date.ISO_DATE'] ] # Reference output variable
