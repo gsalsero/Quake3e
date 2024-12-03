@@ -79,7 +79,7 @@ stages:
                 # /mingw64/bin/make --version;
                 # /mingw64/bin/gcc --version;
                 cd '$MSYS_SOURCE_DIR';
-                make install DESTDIR='$INSTALL_DIR' ARCH=x86_64 CC=/mingw64/bin/gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
+                make install VERBOSE=1 DESTDIR='$INSTALL_DIR' ARCH=x86_64 CC=/mingw64/bin/gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
               "@
 
             displayName: "Build and install quake3e with MINGW64"
