@@ -83,6 +83,8 @@ stages:
               & "C:\msys64\usr\bin\bash.exe" -lc @"
                 echo '##### pwd ####'; pwd;
                 echo '#### env ####'; env;
+                export MSYSTEM=MINGW64;
+                export PATH=/mingw64/bin:\$PATH;
                 make --version;
                 gcc --version;
               "@
