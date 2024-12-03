@@ -67,7 +67,7 @@ stages:
 
           - powershell: |
               & "C:\msys64\usr\bin\env" MSYSTEM=MINGW64 /usr/bin/bash -lc @"
-                export DELETE_ME=\"-D_DELETE_ME"
+                export DELETE_ME=\"-D_DELETE_ME\"
                 export CFLAGS=\"\$DELETE_ME -DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\"
                 echo '### env ####'
                 env | sort
