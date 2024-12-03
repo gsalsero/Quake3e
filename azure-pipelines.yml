@@ -88,6 +88,7 @@ stages:
               # Build and install the project
               & "C:\msys64\usr\bin\bash.exe" -lc @"
                 export MSYSTEM=MINGW64;
+                export PATH=/mingw64/bin:\$PATH;
                 cd '$MSYS_SOURCE_DIR';
                 echo make install ARCH=x86_64 CC=gcc CFLAGS=\"\$CFLAGS -DISO_DATE='$(ISO_DATE)' -DBUILD_ID=$(Build.BuildId)\" DESTDIR='$INSTALL_DIR' USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0;
                 #make install ARCH=x86_64 CC=gcc CFLAGS=\"\$CFLAGS -DISO_DATE='$(ISO_DATE)' -DBUILD_ID=$(Build.BuildId)\" DESTDIR='$INSTALL_DIR' USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
