@@ -70,16 +70,10 @@ stages:
               C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm make mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc;"
             displayName: "Install build dependencies"
 
-          - powershell: |
-              & "C:\msys64\usr\bin\env" MSYSTEM=MINGW64 /usr/bin/bash -lc @"
-                export CFLAGS=\"-DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\"
-                echo '### env ####'
-                env | sort
-                cd '$(Build.SourcesDirectory)'
-                echo make -j \$(nproc) install ARCH=x86_64 CC=gcc CFLAGS=\"-DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
-                make -j \$(nproc) install ARCH=x86_64 CC=gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
-              "@
-            displayName: "Build and install quake3e with MINGW64"
+          - script: |
+              C:\msys64\usr\bin\env MSYSTEM=MINGW64 /usr/bin/bash -lc 'cd "$SOURCES_DIR"; ./mingw-build.sh'
+            displayName: "Build Quake3e"
+
           - task: CopyFiles@2
             inputs:
               SourceFolder: "build/release-mingw64-x86_64/"
