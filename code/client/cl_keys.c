@@ -48,7 +48,7 @@ EDIT FIELDS
 static void Field_DrawString(const char* buffer, int x, int y, int drawLen, int prestep, int fieldWidth, int size, qboolean showCursor,
 		qboolean noColorEscape, int curColor) {
 	int		len;
-	char	str[MAX_STRING_CHARS], *s;
+	char	str[MAX_STRING_CHARS];
 	int		i;
 
 	len = strlen( buffer );
@@ -57,7 +57,7 @@ static void Field_DrawString(const char* buffer, int x, int y, int drawLen, int 
 
 	if ( prestep > 0 ) {
 		// we need to track last actual color because we cut some text before
-		s = buffer;
+		const char* s = buffer;
 		for ( i = 0; i < prestep + 1; i++, s++ ) {
 			if ( Q_IsColorString( s ) ) {
 				curColor = *(s+1);
