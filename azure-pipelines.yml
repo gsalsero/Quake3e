@@ -73,10 +73,15 @@ stages:
           #   displayName: "Build and install quake3e with MINGW64"      
           - powershell: |
               & "C:\msys64\usr\bin\env" MSYSTEM=MINGW64 /usr/bin/bash -lc @"
+                echo '### Source Directory ###'
+                echo '$(Build.SourcesDirectory)'
                 cd '$(Build.SourcesDirectory)'
+                echo '### Listing Source Directory ###'
                 ls -l
-                make install ARCH=x86_64 CC=gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
-                ls bin
+                echo '### Number of Processors ###'
+                nproc
+                make -j \$(nproc) install ARCH=x86_64 CC=gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
+                ls -l
               "@
             displayName: "Build and install quake3e with MINGW64"    
               # make install ARCH=x86_64 CC=gcc CFLAGS=\"\$CFLAGS -DISO_DATE='$(ISO_DATE)' -DBUILD_ID=$(Build.BuildId)\" DESTDIR='$(Build.ArtifactStagingDirectory)/install' USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
