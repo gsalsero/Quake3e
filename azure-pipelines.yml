@@ -67,15 +67,12 @@ stages:
 
           - powershell: |
               & "C:\msys64\usr\bin\env" MSYSTEM=MINGW64 /usr/bin/bash -lc @"
-                echo '### CFLAGS ###'
-                echo \"\$CFLAGS\""
-                echo '### SHELL ###'
-                echo \"\$SHELL\"
+                export CFLAGS=\"-DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\"
                 echo '### env ####'
-                env
+                env | sort
                 cd '$(Build.SourcesDirectory)'
                 echo make -j \$(nproc) install ARCH=x86_64 CC=gcc CFLAGS=\"-DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
-                make -j \$(nproc) install ARCH=x86_64 CC=gcc CFLAGS=\"-DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\" USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
+                make -j \$(nproc) install ARCH=x86_64 CC=gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
               "@
             displayName: "Build and install quake3e with MINGW64"
           - task: CopyFiles@2
