@@ -62,9 +62,7 @@ stages:
         steps:
           - script: |
               C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
-              C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc; gcc --version; make --version;"
-              C:\msys64\usr\bin\bash.exe -lc "gcc --version"
-              C:\msys64\usr\bin\bash.exe -lc "make --version"
+              C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc;"
             displayName: "Install build dependencies"
 
           - powershell: |
@@ -76,12 +74,12 @@ stages:
               & "C:\msys64\usr\bin\bash.exe" -lc @"
                 # echo '##### pwd ####'; pwd;
                 # echo '#### env ####'; env;
-                export MSYSTEM=MINGW64;
-                export PATH=/mingw64/bin:\$PATH;
-                /mingw64/bin/make --version;
-                /mingw64/bin/gcc --version;
+                # export MSYSTEM=MINGW64;
+                # export PATH=/mingw64/bin:\$PATH;
+                # /mingw64/bin/make --version;
+                # /mingw64/bin/gcc --version;
                 cd '$MSYS_SOURCE_DIR';
-                make install DESTDIR='$INSTALL_DIR' ARCH=x86_64 CC=gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
+                make install DESTDIR='$INSTALL_DIR' ARCH=x86_64 CC=/mingw64/bin/gcc USE_SDL=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
               "@
 
             displayName: "Build and install quake3e with MINGW64"
