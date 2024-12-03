@@ -28,9 +28,9 @@ stages:
           - script: |
               set -x
               echo "ISO_DATE: $ISO_DATE"
-              make -j$(nproc) DESTDIR=bin CFLAGS="$CFLAGS -DISO_DATE=\"$ISO_DATE\" -DBUILD_ID=$(Build.BuildId)" ARCH=x86_64 CC=gcc USE_SDL=1 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
+              make install -j$(nproc) DESTDIR=bin CFLAGS="$CFLAGS -DISO_DATE=\"$ISO_DATE\" -DBUILD_ID=$(Build.BuildId)" ARCH=x86_64 CC=gcc USE_SDL=1 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan CNAME=quake3e-vulkan BUILD_SERVER=0
               make clean ARCH=x86_64
-              make -j$(nproc) DESTDIR=bin CFLAGS="$CFLAGS -DISO_DATE=\"$ISO_DATE\" -DBUILD_ID=$(Build.BuildId)" ARCH=x86_64 CC=gcc USE_SDL=1 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=opengl
+              make install -j$(nproc) DESTDIR=bin CFLAGS="$CFLAGS -DISO_DATE=\"$ISO_DATE\" -DBUILD_ID=$(Build.BuildId)" ARCH=x86_64 CC=gcc USE_SDL=1 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=opengl
             displayName: "Build quake3e"
           - task: ArchiveFiles@2
             inputs:
