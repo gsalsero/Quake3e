@@ -63,16 +63,13 @@ stages:
           - script: |
               C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
               C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc"
+              echo "### mingw-w64-x86_64-binutils ###"
+              C:\msys64\user\bin\bash.exe -lc "pacman -Ql mingw-w64-x86_64-binutils"
+              echo "### mingw-w64-x86_64-make ###"
+              C:\msys64\user\bin\bash.exe -lc "pacman -Ql mingw-w64-x86_64-make"
+              echo "### mingw-w64-x86_64-gcc ###"
+              C:\msys64\user\bin\bash.exe -lc "pacman -Ql mingw-w64-x86_64-gcc"
             displayName: "Install build dependencies"
-
-          - powershell: |
-              & "C:\msys64\usr\bin\bash.exe" -lc @"
-                export MSYSTEM=MINGW64;
-                export PATH=/mingw64/bin:\$PATH;
-                which gcc;
-                gcc --version;
-              "@
-            displayName: "Verify GCC Installation"
 
           - powershell: |
               # Convert Windows paths to MSYS2-compatible paths
@@ -81,8 +78,8 @@ stages:
 
               # Print debugging information
               & "C:\msys64\usr\bin\bash.exe" -lc @"
-                echo '##### pwd ####'; pwd;
-                echo '#### env ####'; env;
+                # echo '##### pwd ####'; pwd;
+                # echo '#### env ####'; env;
                 export MSYSTEM=MINGW64;
                 export PATH=/mingw64/bin:\$PATH;
                 /mingw64/bin/make --version;
