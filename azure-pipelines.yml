@@ -82,7 +82,8 @@ stages:
               # Print debugging information
               & "C:\msys64\usr\bin\bash.exe" -lc @"
                 echo '##### pwd ####'; pwd;
-                echo '#### env ####'; env
+                echo '#### env ####'; env;
+                echo '#### path ####'; echo $PATH;
               "@
 
               # Build and install the project
