@@ -62,7 +62,8 @@ stages:
         steps:
           - script: |
               C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
-              C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm filesystem make mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc;"
+              C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm make mingw-w64-x86_64-binutils mingw-w64-x86_64-make mingw-w64-x86_64-gcc;"
+              C:\msys64\usr\bin\bash.exe -lc "msys2_shell.cmd --help"
             displayName: "Install build dependencies"
 
           - powershell: |
