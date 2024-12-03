@@ -73,8 +73,7 @@ stages:
           - task: CopyFiles@2
             inputs:
               SourceFolder: "build/release-mingw64-x86_64/"
-              Contents: |
-                quake3e-vulkan.x64.exe
+              Contents: "*.exe"
               TargetFolder: "build/release-mingw64-x86_64/archive"
               CleanTargetFolder: true
               preserveTimestamp: true
