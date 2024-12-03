@@ -68,6 +68,7 @@ stages:
           - powershell: |
               & "C:\msys64\usr\bin\env" MSYSTEM=MINGW64 /usr/bin/bash -lc @"
                 export CFLAGS=\"-DISO_DATE=\\\"$(ISO_DATE)\\\" -DBUILD_ID=$(Build.BuildId)\"
+                echo \"CFLAGS: \$CFLAGS\" 
                 echo '### env ####'
                 env | sort
                 cd '$(Build.SourcesDirectory)'
