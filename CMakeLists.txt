@@ -10,7 +10,7 @@ add_compile_options(-Wall -Wimplicit -Wstrict-prototypes -Wno-unused-result -pip
 
 
 if(APPLE)
-  add_compile_definitions(-DMACOS_X -DUSE_LOCAL_HEADERS)
+  add_compile_definitions(MACOS_X USE_LOCAL_HEADERS)
   add_compile_options(-arch arm64)
 endif()
 
@@ -25,8 +25,8 @@ if(GENERATE_DEPENDENCIES)
     add_compile_options(-MMD)
 endif()
 
-add_compile_definitions(-DUSE_OPENGL_API)
-add_compile_definitions(-DDEBUG -D_DEBUG)
+add_compile_definitions(USE_OPENGL_API)
+add_compile_definitions(DEBUG _DEBUG)
 add_compile_options(-g -O0)
 
 # if(USE_SDL)
@@ -99,6 +99,7 @@ foreach(flag IN LISTS MY_OPTIONS)
   message( "    ${flag}")
 endforeach()
 
+message( "")
 get_directory_property(MY_DEFS COMPILE_DEFINITIONS)
 message( "  Compile definitions:")
 foreach(def IN LISTS MY_DEFS)
