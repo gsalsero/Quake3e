@@ -7,19 +7,48 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wimplicit -Wstrict-prototypes -Wno-unused-result -pipe)
-
+add_compile_options(-arch ${CMAKE_SYSTEM_PROCESSOR})
 
 if(APPLE)
-  add_compile_definitions(MACOS_X USE_LOCAL_HEADERS)
-  add_compile_options(-arch arm64)
+  add_compile_definitions(MACOS_X)
 endif()
 
 option(BUILD_CLIENT "Build the quake3 client" ON)
 option(BUILD_SERVER "Build the dedicated server" OFF)
+
 option(USE_SDL      "Use SDL2 for input, windowing, etc." ON)
-option(USE_OPENGL   "Compile with OpenGL support"         OFF)
-option(USE_VULKAN   "Compile with Vulkan support"         OFF) 
+option(USE_CURL     "Use libcurl for HTTP downloads"    ON)
+option(USE_CURL_DLOPEN "Use dlopen to load libcurl" ON)
+option(USE_LOCAL_HEADERS "Use local headers instead of system headers" OFF)
+option(USE_SYSTEM_JPEG "Use system libjpeg instead of the included one" OFF)
+
+option(USE_OGG_VORBIS	"Use Ogg Vorbis for sound" ON)
+option(USE_SYSTEM_OGG "Use system libogg/libvorbis instead of the included one" OFF)
+option(USE_SYSTEM_VORBIS "Use system libvorbis instead of the included one" OFF)
+
+option(USE_VULKAN   "Compile with Vulkan support"         ON) 
+option(USE_OPENGL   "Compile with OpenGL support"         ON)
+option(USE_OPENGL2   "Compile with OpenGL2 support"         OFF)
+option(USE_OPENGL_API "Use OpenGL API" ON)
+option(USE_VULKAN_API "Use Vulkan API" ON)
+option(USE_RENDERER_DLOPEND "Use dlopen to load renderer" ON)
+
 option(GENERATE_DEPENDENCIES "Generate dependency files during compilation" ON)
+
+if(USE_LOCAL_HEADERS)
+  add_compile_definitions(USE_LOCAL_HEADERS)
+endif()
+
+if(USE_CURL)
+  add_compile_definitions(USE_CURL)
+  if(USE_CURL_DLOPEN)
+	add_compile_definitions(USE_CURL_DLOPEN)
+  endif()
+endif()
+
+if(USE_OGG_VORBIS)
+  add_compile_definitions(USE_OGG_VORBIS)
+endif()
 
 if(GENERATE_DEPENDENCIES)
     add_compile_options(-MMD)
@@ -28,13 +57,6 @@ endif()
 add_compile_definitions(USE_OPENGL_API)
 add_compile_definitions(DEBUG _DEBUG)
 add_compile_options(-g -O0)
-
-# if(USE_SDL)
-#   find_package(SDL2 REQUIRED)
-#   if(NOT SDL2_FOUND)
-#     message(FATAL_ERROR "SDL2 not found. Please install it (e.g., via Homebrew) or set SDL2_INCLUDE_DIRS/SDL2_LIBRARIES.")
-#   endif()
-# endif()
 
 add_subdirectory(code/botlib)
 add_subdirectory(code/client)

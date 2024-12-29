@@ -18,7 +18,8 @@
           "BUILD_SERVER": "OFF",
           "USE_SDL": "ON",
           "USE_OPENGL": "ON",
-          "USE_VULKAN": "OFF"
+          "USE_VULKAN": "OFF",
+          "USE_LOCAL_HEADERS": "ON"
         }
       },        
       {
