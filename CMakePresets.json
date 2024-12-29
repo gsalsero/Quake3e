@@ -1,0 +1,52 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 19
+    },
+    "configurePresets": [
+      {
+        "name": "base",
+        "hidden": true,
+        "binaryDir": "build/${presetName}",
+        "generator": "Unix Makefiles",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_OSX_ARCHITECTURES": "arm64",
+            
+          "BUILD_CLIENT": "ON",
+          "BUILD_SERVER": "OFF",
+          "USE_SDL": "ON",
+          "USE_OPENGL": "ON",
+          "USE_VULKAN": "OFF"
+        }
+      },        
+      {
+        "name": "apple-silicon-debug",
+        "inherits": "base",
+        "displayName": "Apple Silicon (arm64) Debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "apple-silicon-release",
+        "inherits": "base",
+        "displayName": "Apple Silicon (arm64) Release",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "apple-silicon-debug",
+        "configurePreset": "apple-silicon-debug"
+      },
+      {
+        "name": "apple-silicon-release",
+        "configurePreset": "apple-silicon-release"
+      }
+    ],
+    "testPresets": []
+  }

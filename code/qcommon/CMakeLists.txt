@@ -1,0 +1,30 @@
+add_library(quake3e_qcommon STATIC)
+
+target_sources(quake3e_qcommon
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/cm_load.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cm_patch.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cm_polylib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cm_test.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cm_trace.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/common.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cvar.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/files.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/history.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/huffman.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/huffman_static.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/keys.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/md4.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/md5.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/msg.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/net_chan.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/net_ip.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/puff.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/q_math.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/q_shared.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/unzip.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/vm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/vm_aarch64.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/vm_interpreted.c
+)
