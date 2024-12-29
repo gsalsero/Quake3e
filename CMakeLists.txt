@@ -6,19 +6,28 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_compile_options(-Wall -Wimplicit -Wstrict-prototypes -Wno-unused-result)
+add_compile_options(-Wall -Wimplicit -Wstrict-prototypes -Wno-unused-result -pipe)
 
-# if(APPLE)
-#   add_definitions(-DMACOS_X)
-# endif()
 
-# option(BUILD_CLIENT "Build the quake3 client" ON)
-# option(BUILD_SERVER "Build the dedicated server" OFF)
-# option(USE_SDL      "Use SDL2 for input, windowing, etc." ON)
-# option(USE_OPENGL   "Compile with OpenGL support"         OFF)
-# option(USE_VULKAN   "Compile with Vulkan support"         OFF) 
+if(APPLE)
+  add_compile_definitions(-DMACOS_X -DUSE_LOCAL_HEADERS)
+  add_compile_options(-arch arm64)
+endif()
 
-add_definitions(-DUSE_OPENGL_API)
+option(BUILD_CLIENT "Build the quake3 client" ON)
+option(BUILD_SERVER "Build the dedicated server" OFF)
+option(USE_SDL      "Use SDL2 for input, windowing, etc." ON)
+option(USE_OPENGL   "Compile with OpenGL support"         OFF)
+option(USE_VULKAN   "Compile with Vulkan support"         OFF) 
+option(GENERATE_DEPENDENCIES "Generate dependency files during compilation" ON)
+
+if(GENERATE_DEPENDENCIES)
+    add_compile_options(-MMD)
+endif()
+
+add_compile_definitions(-DUSE_OPENGL_API)
+add_compile_definitions(-DDEBUG -D_DEBUG)
+add_compile_options(-g -O0)
 
 # if(USE_SDL)
 #   find_package(SDL2 REQUIRED)
@@ -52,14 +61,49 @@ add_subdirectory(code/unix)
 #   install(TARGETS quake3e_ded RUNTIME DESTINATION bin)
 # endif()
 
+# Execute grep and sed to extract the version from q_shared.h
+execute_process(
+    COMMAND sh -c "grep '\\+define[ \t]\\+Q3_VERSION[ \t]\\+\\+' code/qcommon/q_shared.h | sed -e 's/.*\".* \\([^ ]*\\)\"/\\1/'"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE Q3_VERSION_RAW
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Fallback if grep/sed doesn't find the version
+if(Q3_VERSION_RAW)
+    set(Q3_VERSION "${Q3_VERSION_RAW}")
+else()
+    set(Q3_VERSION "1.32e")  # Default fallback
+endif()
+
 #
-# Status message
+#  message
 #
-message(STATUS "-------------------------------------")
-message(STATUS "Building for Apple Silicon (arm64)")
-message(STATUS "BUILD_CLIENT : ${BUILD_CLIENT}")
-message(STATUS "BUILD_SERVER : ${BUILD_SERVER}")
-message(STATUS "USE_SDL      : ${USE_SDL}")
-message(STATUS "USE_OPENGL   : ${USE_OPENGL}")
-message(STATUS "USE_VULKAN   : ${USE_VULKAN}")
-message(STATUS "-------------------------------------")
+message( "-------------------------------------")
+file(RELATIVE_PATH RELATIVE_BUILD_DIR ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
+message( "Building quake3 in: ${RELATIVE_BUILD_DIR}")
+message( "")
+message( "  VERSION: ${Q3_VERSION}")
+message( "  PLATFORM: ${CMAKE_SYSTEM_NAME}")
+message( "  ARCH: ${CMAKE_SYSTEM_PROCESSOR}")
+
+get_filename_component(COMPILER_NAME ${CMAKE_C_COMPILER} NAME)
+message( "  CC: ${COMPILER_NAME}")
+
+message( "")
+
+get_directory_property(MY_OPTIONS COMPILE_OPTIONS)
+message( "  Compile options:")
+foreach(flag IN LISTS MY_OPTIONS)
+  message( "    ${flag}")
+endforeach()
+
+get_directory_property(MY_DEFS COMPILE_DEFINITIONS)
+message( "  Compile definitions:")
+foreach(def IN LISTS MY_DEFS)
+  message( "    ${def}")
+endforeach()
+
+message( "")
+message( "-------------------------------------")

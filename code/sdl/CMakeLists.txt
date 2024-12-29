@@ -1,5 +1,4 @@
 add_library(quake3e_sdl STATIC)
-add_definitions(-DUSE_LOCAL_HEADERS)
 
 target_sources(quake3e_sdl
 	PRIVATE
