@@ -3,7 +3,6 @@ set(Q3_CLIENT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cl_cgame.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cl_cin.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cl_console.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/cl_curl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cl_input.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cl_jpeg.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cl_keys.c
@@ -22,7 +21,12 @@ set(Q3_CLIENT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/snd_wavelet.c
 )
 
+if(USE_CURL)
+    list(APPEND Q3_CLIENT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cl_curl.c)
+endif()
+
 add_executable(quake3e ${Q3_CLIENT_SOURCES})
+
 target_link_libraries(quake3e 
     PRIVATE 
     quake3e_qcommon
