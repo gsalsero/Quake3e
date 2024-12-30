@@ -19,7 +19,8 @@
           "USE_SDL": "ON",
           "USE_OPENGL": "ON",
           "USE_VULKAN": "OFF",
-          "USE_LOCAL_HEADERS": "ON"
+          "USE_LOCAL_HEADERS": "ON",
+          "USE_RENDERER_DLOPEN": "OFF"
         }
       },        
       {
