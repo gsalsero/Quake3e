@@ -1,6 +1,6 @@
-add_library(quake3e_unix STATIC)
+add_library(unix STATIC)
 
-target_sources(quake3e_unix
+target_sources(unix
 	PRIVATE
     # ${CMAKE_CURRENT_SOURCE_DIR}/linux_glimp.c
     # ${CMAKE_CURRENT_SOURCE_DIR}/linux_joystick.c

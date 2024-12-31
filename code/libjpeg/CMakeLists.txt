@@ -1,6 +1,6 @@
-add_library(quake3e_jpg STATIC)
+add_library(jpg STATIC)
 
-target_sources(quake3e_jpg
+target_sources(jpg
 	PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jaricom.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jcapimin.c

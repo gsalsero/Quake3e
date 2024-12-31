@@ -33,21 +33,21 @@ add_executable(quake3e ${Q3_CLIENT_SOURCES})
 
 target_link_libraries(quake3e 
     PRIVATE 
-    quake3e_qcommon
-    quake3e_botlib
-    quake3e_renderer
-    quake3e_renderercommon
-    quake3e_sdl
-    quake3e_server
-    quake3e_unix
-    quake3e_jpg
+    qcommon
+    botlib
+    renderer
+    renderercommon
+    sdl
+    server
+    unix
+    jpg
 )
 
 if(USE_OGG_VORBIS)
     if(NOT USE_SYSTEM_OGG)
         target_link_libraries(quake3e
             PRIVATE
-            quake3e_ogg
+            ogg
         )
     else()
         find_package(PkgConfig REQUIRED)
@@ -64,7 +64,7 @@ if(USE_OGG_VORBIS)
     if(NOT USE_SYSTEM_VORBIS)
         target_link_libraries(quake3e
             PRIVATE
-            quake3e_vorbis
+            vorbis
         )
     else()
         find_package(PkgConfig REQUIRED)

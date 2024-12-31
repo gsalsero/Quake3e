@@ -1,6 +1,6 @@
-add_library(quake3e_vorbis STATIC)
+add_library(vorbis STATIC)
 
-target_sources(quake3e_vorbis
+target_sources(vorbis
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/analysis.c
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/bitrate.c
@@ -27,12 +27,12 @@ target_sources(quake3e_vorbis
 
 add_compile_options(VORBIS_FLAGS)
 
-target_include_directories(quake3e_vorbis
+target_include_directories(vorbis
     PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(quake3e_vorbis
+target_link_libraries(vorbis
     PRIVATE
-    quake3e_ogg
+    ogg
 )

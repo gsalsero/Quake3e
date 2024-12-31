@@ -110,7 +110,7 @@ endif()
 #   install(TARGETS quake3e RUNTIME DESTINATION bin)
 # endif()
 # if(BUILD_SERVER)
-#   install(TARGETS quake3e_ded RUNTIME DESTINATION bin)
+#   install(TARGETS ded RUNTIME DESTINATION bin)
 # endif()
 
 # Execute grep and sed to extract the version from q_shared.h

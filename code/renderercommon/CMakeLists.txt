@@ -1,6 +1,6 @@
-add_library(quake3e_renderercommon STATIC)
+add_library(renderercommon STATIC)
 
-target_sources(quake3e_renderercommon
+target_sources(renderercommon
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tr_font.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tr_image_bmp.c

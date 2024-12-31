@@ -1,7 +1,7 @@
-add_library(quake3e_botlib STATIC)
+add_library(botlib STATIC)
 add_definitions(-DBOTLIB)
 
-target_sources(quake3e_botlib
+target_sources(botlib
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/be_aas_bspq3.c
     ${CMAKE_CURRENT_SOURCE_DIR}/be_aas_cluster.c

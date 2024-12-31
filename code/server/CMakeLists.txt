@@ -1,6 +1,6 @@
-add_library(quake3e_server STATIC)
+add_library(server STATIC)
 
-target_sources(quake3e_server
+target_sources(server
 	PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/sv_bot.c
 	${CMAKE_CURRENT_SOURCE_DIR}/sv_ccmds.c

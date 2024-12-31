@@ -1,6 +1,6 @@
-add_library(quake3e_ogg STATIC)
+add_library(ogg STATIC)
 
-target_sources(quake3e_ogg
+target_sources(ogg
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bitwise.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framing.c
@@ -8,7 +8,7 @@ target_sources(quake3e_ogg
 
 add_compile_options(OGG_FLAGS)
 
-target_include_directories(quake3e_ogg
+target_include_directories(ogg
     PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 ) 

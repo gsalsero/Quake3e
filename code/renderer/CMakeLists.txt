@@ -1,6 +1,6 @@
-add_library(quake3e_renderer ${RENDERER_SOURCES})
+add_library(renderer ${RENDERER_SOURCES})
 
-target_sources(quake3e_renderer
+target_sources(renderer
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tr_animation.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tr_arb.c
@@ -28,7 +28,7 @@ target_sources(quake3e_renderer
     ${CMAKE_CURRENT_SOURCE_DIR}/tr_world.c
 )
 
-target_link_libraries(quake3e_renderer
+target_link_libraries(renderer
     PRIVATE 
-    quake3e_renderercommon
+    renderercommon
 )

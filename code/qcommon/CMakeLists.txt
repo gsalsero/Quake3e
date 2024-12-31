@@ -1,6 +1,6 @@
-add_library(quake3e_qcommon STATIC)
+add_library(qcommon STATIC)
 
-target_sources(quake3e_qcommon
+target_sources(qcommon
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/cm_load.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cm_patch.c
