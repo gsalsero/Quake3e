@@ -1,5 +1,5 @@
 add_library(botlib STATIC)
-add_definitions(-DBOTLIB)
+add_compile_definitions(BOTLIB)
 
 target_sources(botlib
     PRIVATE
