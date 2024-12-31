@@ -15,7 +15,7 @@
           "CMAKE_OSX_ARCHITECTURES": "arm64",
             
           "BUILD_CLIENT": "ON",
-          "BUILD_SERVER": "OFF",
+          "BUILD_SERVER": "ON",
           "USE_SDL": "ON",
           "USE_OPENGL": "ON",
           "USE_VULKAN": "OFF",

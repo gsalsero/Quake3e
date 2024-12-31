@@ -14,7 +14,7 @@ if(APPLE)
 endif()
 
 option(BUILD_CLIENT "Build the quake3 client" ON)
-option(BUILD_SERVER "Build the dedicated server" OFF)
+option(BUILD_SERVER "Build the dedicated server" ON)
 
 option(USE_SDL      "Use SDL2 for input, windowing, etc." ON)
 option(USE_CURL     "Use libcurl for HTTP downloads"    ON)
@@ -74,46 +74,30 @@ add_subdirectory(code/botlib)
 add_subdirectory(code/client)
 add_subdirectory(code/libjpeg)
 add_subdirectory(code/qcommon)
-add_subdirectory(code/renderer)
-add_subdirectory(code/renderercommon)
 add_subdirectory(code/server)
-add_subdirectory(code/unix)
+
+if(APPLE)
+  add_subdirectory(code/unix)
+endif()
+
+if(BUILD_CLIENT)
+  add_subdirectory(code/renderer)
+  add_subdirectory(code/renderercommon)
+endif()
 
 if(USE_SDL)
     add_subdirectory(code/sdl)
 endif()
 
 if(USE_OGG_VORBIS)
-# log USE_SYSTEM_OGG and USE_SYSTEM_VORBIS
-message(STATUS "USE_SYSTEM_OGG: ${USE_SYSTEM_OGG}")
-message(STATUS "USE_SYSTEM_VORBIS: ${USE_SYSTEM_VORBIS}")
   if(NOT USE_SYSTEM_OGG)
-    message(STATUS "Building libogg")
     add_subdirectory(code/libogg)
   endif()
   if(NOT USE_SYSTEM_VORBIS)
-    message(STATUS "Building libvorbis")
     add_subdirectory(code/libvorbis)
   endif()
 endif()
 
-
-# if(BUILD_CLIENT)
-
-# endif()
-
-# if(BUILD_SERVER)
-# 	add_subdirectory(code/server)
-# endif()
-
-# if(BUILD_CLIENT)
-#   install(TARGETS quake3e RUNTIME DESTINATION bin)
-# endif()
-# if(BUILD_SERVER)
-#   install(TARGETS ded RUNTIME DESTINATION bin)
-# endif()
-
-# Execute grep and sed to extract the version from q_shared.h
 execute_process(
     COMMAND sh -c "grep '\\+define[ \t]\\+Q3_VERSION[ \t]\\+\\+' code/qcommon/q_shared.h | sed -e 's/.*\".* \\([^ ]*\\)\"/\\1/'"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -122,7 +106,6 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# Fallback if grep/sed doesn't find the version
 if(Q3_VERSION_RAW)
     set(Q3_VERSION "${Q3_VERSION_RAW}")
 else()

@@ -29,64 +29,67 @@ if(USE_OGG_VORBIS)
     list(APPEND Q3_CLIENT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/snd_codec_ogg.c)
 endif()
 
-add_executable(quake3e ${Q3_CLIENT_SOURCES})
+if(BUILD_CLIENT)
+    add_executable(quake3e ${Q3_CLIENT_SOURCES})
 
-target_link_libraries(quake3e 
-    PRIVATE 
-    qcommon
-    botlib
-    renderer
-    renderercommon
-    sdl
-    server
-    unix
-    jpg
-)
+    target_link_libraries(quake3e
+        PRIVATE
+        qcommon
+        botlib
+        renderer
+        renderercommon
+        sdl
+        server
+        unix
+        jpg
+    )
 
-if(USE_OGG_VORBIS)
-    if(NOT USE_SYSTEM_OGG)
-        target_link_libraries(quake3e
-            PRIVATE
-            ogg
-        )
-    else()
-        find_package(PkgConfig REQUIRED)
-
-        pkg_check_modules(OGG REQUIRED ogg)
-
-        if(OGG_FOUND)
-            target_include_directories(quake3e PRIVATE ${OGG_INCLUDE_DIRS})
-            target_link_libraries(quake3e PRIVATE ${OGG_LIBRARIES})
+    if(USE_OGG_VORBIS)
+        if(NOT USE_SYSTEM_OGG)
+            target_link_libraries(quake3e
+                PRIVATE
+                ogg
+            )
         else()
-            add_compile_options(-logg)
+            find_package(PkgConfig REQUIRED)
+
+            pkg_check_modules(OGG REQUIRED ogg)
+
+            if(OGG_FOUND)
+                target_include_directories(quake3e PRIVATE ${OGG_INCLUDE_DIRS})
+                target_link_libraries(quake3e PRIVATE ${OGG_LIBRARIES})
+            else()
+                add_compile_options(-logg)
+            endif()
+        endif()
+        if(NOT USE_SYSTEM_VORBIS)
+            target_link_libraries(quake3e
+                PRIVATE
+                vorbis
+            )
+        else()
+            find_package(PkgConfig REQUIRED)
+
+            pkg_check_modules(VORBIS REQUIRED vorbisfile)
+
+            if(VORBIS_FOUND)
+                target_include_directories(quake3e PRIVATE  ${VORBIS_INCLUDE_DIRS})
+                target_link_libraries(quake3e PRIVATE ${VORBIS_LIBRARIES})
+            else()
+                add_compile_options(-lvorbisfile)
+            endif()
         endif()
     endif()
-    if(NOT USE_SYSTEM_VORBIS)
-        target_link_libraries(quake3e
-            PRIVATE
-            vorbis
-        )
-    else()
-        find_package(PkgConfig REQUIRED)
 
-        pkg_check_modules(VORBIS REQUIRED vorbisfile)
+    set_target_properties(quake3e PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
 
-        if(VORBIS_FOUND)
-            target_include_directories(quake3e PRIVATE  ${VORBIS_INCLUDE_DIRS})
-            target_link_libraries(quake3e PRIVATE ${VORBIS_LIBRARIES})
-        else()
-            add_compile_options(-lvorbisfile)
-        endif()
-    endif()
+    add_custom_command(TARGET quake3e POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${PROJECT_SOURCE_DIR}/code/libsdl/macosx/libSDL2-2.0.0.dylib"
+            $<TARGET_FILE_DIR:quake3e>
+        COMMENT "Copying SDL2 dylib to the quake3e directory"
+    )
 endif()
 
-set_target_properties(quake3e PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-
-add_custom_command(TARGET quake3e POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-        "${PROJECT_SOURCE_DIR}/code/libsdl/macosx/libSDL2-2.0.0.dylib"
-        $<TARGET_FILE_DIR:quake3e>
-    COMMENT "Copying SDL2 dylib to the quake3e directory"
-)

@@ -1,7 +1,4 @@
-add_library(qcommon STATIC)
-
-target_sources(qcommon
-    PRIVATE
+set(QCOMMON_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cm_load.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cm_patch.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cm_polylib.c
@@ -20,11 +17,36 @@ target_sources(qcommon
     ${CMAKE_CURRENT_SOURCE_DIR}/msg.c
     ${CMAKE_CURRENT_SOURCE_DIR}/net_chan.c
     ${CMAKE_CURRENT_SOURCE_DIR}/net_ip.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/puff.c
     ${CMAKE_CURRENT_SOURCE_DIR}/q_math.c
     ${CMAKE_CURRENT_SOURCE_DIR}/q_shared.c
     ${CMAKE_CURRENT_SOURCE_DIR}/unzip.c
     ${CMAKE_CURRENT_SOURCE_DIR}/vm.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/vm_aarch64.c
     ${CMAKE_CURRENT_SOURCE_DIR}/vm_interpreted.c
 )
+
+if(APPLE)
+    list(APPEND QCOMMON_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/vm_aarch64.c
+    )
+endif()
+
+if(BUILD_CLIENT)
+    add_library(qcommon STATIC)
+
+    target_sources(qcommon
+        PRIVATE
+        ${QCOMMON_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/puff.c
+    )
+endif()
+
+if(BUILD_SERVER)
+    add_library(qcommon_ded STATIC)
+
+    target_sources(qcommon_ded
+        PRIVATE
+        ${QCOMMON_SOURCES}
+    )
+
+    target_compile_definitions(qcommon_ded PRIVATE DEDICATED)
+endif()
