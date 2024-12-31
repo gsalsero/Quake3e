@@ -13,12 +13,12 @@ set(UNIX_SOURCES
 )
 
 if(BUILD_CLIENT)
-add_library(unix STATIC)
+    add_library(unix STATIC)
 
-target_sources(unix
-	PRIVATE
-        ${UNIX_SOURCES}
-)
+    target_sources(unix
+        PRIVATE
+            ${UNIX_SOURCES}
+    )
 endif()
 
 if(BUILD_SERVER)
