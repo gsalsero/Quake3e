@@ -1551,6 +1551,22 @@ static int FS_OpenFileInPak( fileHandle_t *file, pack_t *pak, fileInPack_t *pakF
 
 
 /*
+============
+FS_BannedPakFile
+
+Check if file should NOT be loaded from pk3 or pk3dir archives
+============
+*/
+static qboolean FS_BannedPakFile( const char *filename )
+{
+	if ( !strcmp( filename, "autoexec.cfg" ) || !strcmp( filename, Q3CONFIG_CFG ) )
+		return qtrue;
+	else
+		return qfalse;
+}
+
+
+/*
 ===========
 FS_FOpenFileRead
 
@@ -1591,7 +1607,9 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 	// The searchpaths do guarantee that something will always
 	// be prepended, so we don't need to worry about "c:" or "//limbo"
 	if ( FS_CheckDirTraversal( filename ) ) {
-		*file = FS_INVALID_HANDLE;
+		if (file) {
+			*file = FS_INVALID_HANDLE;
+		}
 		return -1;
 	}
 
@@ -1619,6 +1637,9 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 					pakFile = pakFile->next;
 				} while ( pakFile != NULL );
 			} else if ( search->dir && search->policy != DIR_DENY ) {
+				if ( search->policy != DIR_STATIC && FS_BannedPakFile( filename ) ) {
+					continue;
+				}
 				dir = search->dir;
 				netpath = FS_BuildOSPath( dir->path, dir->gamedir, filename );
 				temp = Sys_FOpen( netpath, "rb" );
@@ -1661,6 +1682,9 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 				pakFile = pakFile->next;
 			} while ( pakFile != NULL );
 		} else if ( search->dir && search->policy != DIR_DENY ) {
+			if ( search->policy != DIR_STATIC && FS_BannedPakFile( filename ) ) {
+				continue;
+			}
 			// check a file in the directory tree
 			dir = search->dir;
 
@@ -1809,6 +1833,10 @@ int FS_Read( void *buffer, int len, fileHandle_t f ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
 
+	if ( len < 0 ) {
+		Com_Error( ERR_FATAL, "FS_Read: len < 0");
+	}
+
 	if ( f <= 0 || f >= MAX_FILE_HANDLES ) {
 		return 0;
 	}
@@ -1862,6 +1890,10 @@ int FS_Write( const void *buffer, int len, fileHandle_t h ) {
 
 	if ( !fs_searchpaths ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
+	}
+
+	if ( len < 0 ) {
+		Com_Error( ERR_FATAL, "FS_Write: len < 0");
 	}
 
 	//if ( h <= 0 || h >= MAX_FILE_HANDLES ) {
@@ -2100,7 +2132,7 @@ int FS_ReadFile( const char *qpath, void **buffer ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
 
-	if ( !qpath || !qpath[0] ) {
+	if ( qpath == NULL || qpath[0] == '\0' ) {
 		Com_Error( ERR_FATAL, "FS_ReadFile with empty name" );
 	}
 
@@ -2178,9 +2210,14 @@ int FS_ReadFile( const char *qpath, void **buffer ) {
 	}
 
 	buf = Hunk_AllocateTempMemory( len + 1 );
-	*buffer = buf;
 
-	FS_Read( buf, len, h );
+	if ( FS_Read( buf, len, h ) != len ) {
+		Hunk_FreeTempMemory( buf );
+		FS_FCloseFile( h );
+		return -1;
+	}
+
+	*buffer = buf;
 
 	fs_loadCount++;
 	fs_loadStack++;
@@ -2268,22 +2305,6 @@ static int FS_PakHashSize( const int filecount )
 	}
 
 	return hashSize;
-}
-
-
-/*
-============
-FS_BannedPakFile
-
-Check if file should NOT be added to hash search table
-============
-*/
-static qboolean FS_BannedPakFile( const char *filename )
-{
-	if ( !strcmp( filename, "autoexec.cfg" ) || !strcmp( filename, Q3CONFIG_CFG ) )
-		return qtrue;
-	else
-		return qfalse;
 }
 
 
@@ -3451,6 +3472,9 @@ static char **FS_ListFilteredFiles( const char *path, const char *extension, con
 				// unique the match
 				name = sysFiles[ i ];
 				length = strlen( name );
+				if ( search->policy != DIR_STATIC && FS_BannedPakFile( name ) ) {
+					continue;
+				}
 				if ( fnamecallback ) {
 					// use custom filter
 					if ( !fnamecallback( name, length ) )
@@ -5799,26 +5823,16 @@ void *FS_LoadLibrary( const char *name )
 {
 	const searchpath_t *sp = fs_searchpaths;
 	void *libHandle = NULL;
-	char *fn;
-
-#ifdef DEBUG
-	fn = FS_BuildOSPath( Sys_Pwd(), name, NULL );
-	libHandle = Sys_LoadLibrary( fn );
-#endif
 
 	while ( !libHandle && sp ) {
 		while ( sp && ( sp->policy != DIR_STATIC || !sp->dir ) ) {
 			sp = sp->next;
 		}
 		if ( sp ) {
-			fn = FS_BuildOSPath( sp->dir->path, name, NULL );
+			const char *fn = FS_BuildOSPath( sp->dir->path, sp->dir->gamedir, name );
 			libHandle = Sys_LoadLibrary( fn );
 			sp = sp->next;
 		}
-	}
-
-	if ( !libHandle ) {
-		return NULL;
 	}
 
 	return libHandle;

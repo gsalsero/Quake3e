@@ -63,6 +63,7 @@ static void LAN_LoadCachedServers( void ) {
 		return;
 	}
 
+	size = 0;
 	FS_Read( &cls.numglobalservers, sizeof(int), fileIn );
 	FS_Read( &cls.numfavoriteservers, sizeof(int), fileIn );
 	FS_Read( &size, sizeof(int), fileIn );
@@ -770,6 +771,11 @@ static qboolean UI_GetValue( char* value, int valueSize, const char* key ) {
 		return qtrue;
 	}
 
+	if ( !Q_stricmp( key, "trap_Cvar_SetDescription_Q3E" ) ) {
+		Com_sprintf( value, valueSize, "%i", UI_CVAR_SETDESCRIPTION );
+		return qtrue;
+	}
+
 	return qfalse;
 }
 
@@ -1166,6 +1172,10 @@ static intptr_t CL_UISystemCalls( intptr_t *args ) {
 	// engine extensions
 	case UI_R_ADDLINEARLIGHTTOSCENE:
 		re.AddLinearLightToScene( VMA(1), VMA(2), VMF(3), VMF(4), VMF(5), VMF(6) );
+		return 0;
+
+	case UI_CVAR_SETDESCRIPTION:
+		Cvar_SetDescription2( (const char*)VMA(1), (const char*)VMA(2) );
 		return 0;
 
 	case UI_TRAP_GETVALUE:
