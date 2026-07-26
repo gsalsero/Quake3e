@@ -29,7 +29,7 @@ cvar_t	*cl_debugMove;
 cvar_t	*cl_motd;
 
 #ifdef USE_RENDERER_DLOPEN
-cvar_t	*cl_renderer;
+static cvar_t *cl_renderer;
 #endif
 
 cvar_t	*rcon_client_password;
@@ -661,7 +661,7 @@ static void CL_CompleteRecordName(const char *args, int argNum )
 	{
 		char demoExt[ 16 ];
 
-		Com_sprintf( demoExt, sizeof( demoExt ), ".%s%d", DEMOEXT, com_protocol->integer );
+		Com_sprintf( demoExt, sizeof( demoExt ), "." DEMOEXT "%d", com_protocol->integer );
 		Field_CompleteFilename( "demos", demoExt, qtrue, FS_MATCH_EXTERN | FS_MATCH_STICK );
 	}
 }
@@ -730,7 +730,7 @@ void CL_ReadDemoMessage( void ) {
 		return;
 	}
 	buf.cursize = LittleLong( buf.cursize );
-	if ( buf.cursize == -1 ) {
+	if ( buf.cursize < 0 ) {
 		CL_DemoCompleted();
 		return;
 	}
@@ -829,7 +829,7 @@ static void CL_CompleteDemoName(const char *args, int argNum )
 	if ( argNum == 2 )
 	{
 		FS_SetFilenameCallback( CL_DemoNameCallback_f );
-		Field_CompleteFilename( "demos", "." DEMOEXT "??", qfalse, FS_MATCH_ANY | FS_MATCH_STICK );
+		Field_CompleteFilename( "demos", "." DEMOEXT "??", qfalse, FS_MATCH_ANY | FS_MATCH_STICK | FS_MATCH_SUBDIRS );
 		FS_SetFilenameCallback( NULL );
 	}
 }
@@ -1093,7 +1093,7 @@ void CL_MapLoading( void ) {
 		Com_Memset( cls.updateInfoString, 0, sizeof( cls.updateInfoString ) );
 		Com_Memset( clc.serverMessage, 0, sizeof( clc.serverMessage ) );
 		Com_Memset( &cl.gameState, 0, sizeof( cl.gameState ) );
-		clc.lastPacketSentTime = cls.realtime - 9999;  // send packet immediately
+		clc.lastPacketSentTime = cls.realtime - RETRANSMIT_TIMEOUT; // send packet immediately
 		cls.framecount++;
 		SCR_UpdateScreen();
 	} else {
@@ -1105,7 +1105,7 @@ void CL_MapLoading( void ) {
 		Key_SetCatcher( 0 );
 		cls.framecount++;
 		SCR_UpdateScreen();
-		clc.connectTime = -RETRANSMIT_TIMEOUT;
+		clc.connectTime = cls.realtime - RECONNECT_TIMEOUT; // send packet immediately
 		NET_StringToAdr( cls.servername, &clc.serverAddress, NA_UNSPEC );
 		// we don't need a challenge on the localhost
 		CL_CheckForResend();
@@ -1573,6 +1573,17 @@ static void CL_Connect_f( void ) {
 	}
 
 	Q_strncpyz( buffer, server, sizeof( buffer ) );
+
+	len = strlen( buffer );
+	if ( len <= 0 ) {
+		return;
+	}
+
+	// some programs may add ending slash
+	if ( buffer[len - 1] == '/' ) {
+		buffer[len - 1] = '\0';
+	}
+
 	server = buffer;
 
 	// skip leading "q3a:/" in connection string
@@ -1585,17 +1596,7 @@ static void CL_Connect_f( void ) {
 		server++;
 	}
 
-	len = strlen( server );
-	if ( len <= 0 ) {
-		return;
-	}
-
-	// some programs may add ending slash
-	if ( buffer[len-1] == '/' ) {
-		buffer[len-1] = '\0';
-	}
-
-	if ( !*server ) {
+	if ( *server == '\0' ) {
 		return;
 	}
 
@@ -1657,7 +1658,7 @@ static void CL_Connect_f( void ) {
 	}
 
 	Key_SetCatcher( 0 );
-	clc.connectTime = -99999;	// CL_CheckForResend() will fire immediately
+	clc.connectTime = cls.realtime - RECONNECT_TIMEOUT; // CL_CheckForResend() will fire immediately
 	clc.connectPacketCount = 0;
 
 	Cvar_Set( "cl_reconnectArgs", args );
@@ -2280,7 +2281,7 @@ static void CL_CheckForResend( void ) {
 		return;
 	}
 
-	if ( cls.realtime - clc.connectTime < RETRANSMIT_TIMEOUT ) {
+	if ( cls.realtime - clc.connectTime < RECONNECT_TIMEOUT ) {
 		return;
 	}
 
@@ -2692,7 +2693,7 @@ static qboolean CL_ConnectionlessPacket( const netadr_t *from, msg_t *msg ) {
 		clc.challenge = atoi(Cmd_Argv(1));
 		cls.state = CA_CHALLENGING;
 		clc.connectPacketCount = 0;
-		clc.connectTime = -99999;
+		clc.connectTime = cls.realtime - RECONNECT_TIMEOUT;
 
 		// take this address as the new server address.  This allows
 		// a server proxy to hand off connections to multiple servers
@@ -2753,7 +2754,7 @@ static qboolean CL_ConnectionlessPacket( const netadr_t *from, msg_t *msg ) {
 		Netchan_Setup( NS_CLIENT, &clc.netchan, from, Cvar_VariableIntegerValue( "net_qport" ), clc.challenge, clc.compat );
 
 		cls.state = CA_CONNECTED;
-		clc.lastPacketSentTime = cls.realtime - 9999; // send first packet immediately
+		clc.lastPacketSentTime = cls.realtime - RETRANSMIT_TIMEOUT; // send first packet immediately
 		return qtrue;
 	}
 
@@ -3140,8 +3141,8 @@ static void FORMAT_PRINTF(2, 3) QDECL CL_RefPrintf( printParm_t level, const cha
 	switch ( level ) {
 		default: Com_Printf( "%s", msg ); break;
 		case PRINT_DEVELOPER: Com_DPrintf( "%s", msg ); break;
-		case PRINT_WARNING: Com_Printf( S_COLOR_YELLOW "%s", msg ); break;
-		case PRINT_ERROR: Com_Printf( S_COLOR_RED "%s", msg ); break;
+		case PRINT_WARNING: Com_Printf( S_COLOR_WARNING "%s", msg ); break;
+		case PRINT_ERROR: Com_Printf( S_COLOR_ERROR "%s", msg ); break;
 	}
 }
 
@@ -3291,7 +3292,7 @@ void CL_StartHunkUsers( void ) {
 CL_RefMalloc
 ============
 */
-static void *CL_RefMalloc( int size ) {
+static void *CL_RefMalloc( size_t size ) {
 	return Z_TagMalloc( size, TAG_RENDERER );
 }
 
@@ -3358,7 +3359,7 @@ static void CL_InitRef( void ) {
 	refexport_t	*ret;
 #ifdef USE_RENDERER_DLOPEN
 	GetRefAPI_t		GetRefAPI;
-	char			dllName[ MAX_OSPATH ];
+	char			dllName[ MAX_OSPATH ], *ospath;
 #endif
 
 	CL_InitGLimp_Cvars();
@@ -3374,12 +3375,14 @@ static void CL_InitRef( void ) {
 #endif
 
 	Com_sprintf( dllName, sizeof( dllName ), RENDERER_PREFIX "_%s_" REND_ARCH_STRING DLL_EXT, cl_renderer->string );
-	rendererLib = FS_LoadLibrary( dllName );
+	ospath = FS_BuildOSPath( Sys_DefaultBasePath(), dllName, NULL );
+	rendererLib = Sys_LoadLibrary( ospath );
 	if ( !rendererLib )
 	{
 		Cvar_ForceReset( "cl_renderer" );
 		Com_sprintf( dllName, sizeof( dllName ), RENDERER_PREFIX "_%s_" REND_ARCH_STRING DLL_EXT, cl_renderer->string );
-		rendererLib = FS_LoadLibrary( dllName );
+		ospath = FS_BuildOSPath( Sys_DefaultBasePath(), dllName, NULL );
+		rendererLib = Sys_LoadLibrary( ospath );
 		if ( !rendererLib )
 		{
 			Com_Error( ERR_FATAL, "Failed to load renderer %s", dllName );
@@ -3797,9 +3800,12 @@ static void CL_InitGLimp_Cvars( void )
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 	Cvar_CheckRange( r_mode, "-2", va( "%i", s_numVidModes-1 ), CV_INTEGER );
 	Cvar_SetDescription( r_mode, "Set video mode:\n -2 - use current desktop resolution\n -1 - use \\r_customWidth and \\r_customHeight\n  0..N - enter \\modelist for details" );
+#ifdef _DEBUG
+	r_modeFullscreen = Cvar_Get( "r_modeFullscreen", "", CVAR_ARCHIVE | CVAR_LATCH );
+#else
 	r_modeFullscreen = Cvar_Get( "r_modeFullscreen", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+#endif
 	Cvar_SetDescription( r_modeFullscreen, "Dedicated fullscreen mode, set to \"\" to use \\r_mode in all cases." );
-
 	r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	Cvar_SetDescription( r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode." );
 	r_customPixelAspect = Cvar_Get( "r_customPixelAspect", "1", CVAR_ARCHIVE_ND | CVAR_LATCH );
