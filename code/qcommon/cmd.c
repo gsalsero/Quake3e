@@ -973,6 +973,8 @@ void Cmd_ExecuteString( const char *text ) {
 	// send it as a server command if we are connected
 	// this will usually result in a chat message
 	CL_ForwardCommandToServer( text );
+#else
+	Com_Printf( "Unknown command \"%s\"\n", text );
 #endif
 }
 
