@@ -115,7 +115,7 @@ typedef enum {
 	CS_FREE = 0,	// can be reused for a new connection
 	CS_ZOMBIE,		// client has been disconnected, but don't reuse
 					// connection for a couple seconds
-	CS_CONNECTED,	// has been assigned to a client_t, but no gamestate yet
+	CS_CONNECTED,	// has been assigned to a client_t, but no gamestate yet or downloading
 	CS_PRIMED,		// gamestate has been sent, but client hasn't sent a usercmd
 	CS_ACTIVE		// client is fully in game
 } clientState_t;
@@ -191,7 +191,8 @@ typedef struct client_s {
 	qboolean		downloadEOF;		// We have sent the EOF block
 	int				downloadSendTime;	// time we last got an ack from the client
 
-	int				deltaMessage;		// frame last client usercmd message
+	qboolean		deltaActive;		// delta snapshots enabled
+	int				deltaStart;			// don't delta from messages earlier than this when CS_ACTIVE
 	int				lastPacketTime;		// svs.time when packet was last received
 	int				lastConnectTime;	// svs.time when connection started
 	int				lastDisconnectTime;

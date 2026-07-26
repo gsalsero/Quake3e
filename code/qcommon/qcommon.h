@@ -177,7 +177,11 @@ typedef enum {
 } netsrc_t;
 
 
-#define NET_ADDRSTRMAXLEN 48	// maximum length of an IPv6 address string including trailing '\0'
+#ifdef USE_IPV6
+#define NET_ADDRSTRMAXLEN 64	// maximum length of an IPv6 address string including trailing '\0'
+#else
+#define NET_ADDRSTRMAXLEN 16	// maximum length of an IPv4 address string including trailing '\0'
+#endif
 
 typedef struct {
 	netadrtype_t	type;
@@ -413,13 +417,16 @@ intptr_t	QDECL VM_Call( vm_t *vm, int nargs, int callNum, ... );
 void	VM_Debug( int level );
 void	VM_CheckBounds( const vm_t *vm, unsigned int address, unsigned int length );
 void	VM_CheckBounds2( const vm_t *vm, unsigned int addr1, unsigned int addr2, unsigned int length );
+void	VM_CheckBounds3( const vm_t *vm, unsigned int address, unsigned int count, unsigned int size );
 
 #if 1
 #define VM_CHECKBOUNDS VM_CheckBounds
 #define VM_CHECKBOUNDS2 VM_CheckBounds2
+#define VM_CHECKBOUNDS3 VM_CheckBounds3
 #else // for performance evaluation purposes
 #define VM_CHECKBOUNDS(vm,a,b)
 #define VM_CHECKBOUNDS2(vm,a,b,c)
+#define VM_CHECKBOUNDS3(vm,a,b,c)
 #endif
 
 void	*GVM_ArgPtr( intptr_t intValue );
@@ -634,6 +641,7 @@ const char *Cvar_InfoString_Big( int bit, qboolean *truncated );
 void	Cvar_InfoStringBuffer( int bit, char *buff, int buffsize );
 void	Cvar_CheckRange( cvar_t *cv, const char *minVal, const char *maxVal, cvarValidator_t type );
 void	Cvar_SetDescription( cvar_t *var, const char *var_description );
+void	Cvar_SetDescription2( const char *var_name, const char *var_description );
 
 void	Cvar_SetGroup( cvar_t *var, cvarGroup_t group );
 int		Cvar_CheckGroup( cvarGroup_t group );
@@ -678,12 +686,15 @@ typedef enum {
 	H_Q3UI
 } handleOwner_t;
 
-#define FS_MATCH_EXTERN (1<<0)
-#define FS_MATCH_PURE   (1<<1)
-#define FS_MATCH_UNPURE (1<<2)
-#define FS_MATCH_STICK  (1<<3)
-#define FS_MATCH_PK3s   (FS_MATCH_PURE | FS_MATCH_UNPURE)
-#define FS_MATCH_ANY    (FS_MATCH_EXTERN | FS_MATCH_PURE | FS_MATCH_UNPURE)
+#define FS_MATCH_EXTERN    (1<<0)
+#define FS_MATCH_PURE      (1<<1)
+#define FS_MATCH_UNPURE    (1<<2)
+#define FS_MATCH_STICK     (1<<3)
+#define FS_MATCH_SUBDIRS   (1<<4)
+#define FS_MATCH_PK3s      (FS_MATCH_PURE | FS_MATCH_UNPURE)
+#define FS_MATCH_ANY       (FS_MATCH_EXTERN | FS_MATCH_PURE | FS_MATCH_UNPURE)
+
+#define FS_MAX_SUBDIRS		8 /* should be enough for practical use with FS_MATCH_SUBDIRS */
 
 #define	MAX_FILE_HANDLES	64
 #define	FS_INVALID_HANDLE	0
@@ -848,8 +859,7 @@ void FS_Rename( const char *from, const char *to );
 void FS_Remove( const char *osPath );
 void FS_HomeRemove( const char *homePath );
 
-void	FS_FilenameCompletion( const char *dir, const char *ext,
-		qboolean stripExt, void(*callback)(const char *s), int flags );
+void	FS_FilenameCompletion( const char *dir, const char *ext, qboolean stripExt, void(*callback)(const char *s), int flags );
 
 int FS_VM_OpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode, handleOwner_t owner );
 int FS_VM_ReadFile( void *buffer, int len, fileHandle_t f, handleOwner_t owner );
@@ -1099,13 +1109,13 @@ temp file loading
 #define Z_TagMalloc(size, tag)			Z_TagMallocDebug(size, tag, #size, __FILE__, __LINE__)
 #define Z_Malloc(size)					Z_MallocDebug(size, #size, __FILE__, __LINE__)
 #define S_Malloc(size)					S_MallocDebug(size, #size, __FILE__, __LINE__)
-void *Z_TagMallocDebug( int size, memtag_t tag, char *label, char *file, int line );	// NOT 0 filled memory
-void *Z_MallocDebug( int size, char *label, char *file, int line );			// returns 0 filled memory
-void *S_MallocDebug( int size, char *label, char *file, int line );			// returns 0 filled memory
+void *Z_TagMallocDebug( size_t size, memtag_t tag, const char *label, const char *file, int line );	// NOT 0 filled memory
+void *Z_MallocDebug( size_t size, const char *label, const char *file, int line );			// returns 0 filled memory
+void *S_MallocDebug( size_t size, const char *label, const char *file, int line );			// returns 0 filled memory
 #else
-void *Z_TagMalloc( int size, memtag_t tag );	// NOT 0 filled memory
-void *Z_Malloc( int size );			// returns 0 filled memory
-void *S_Malloc( int size );			// NOT 0 filled memory only for small allocations
+void *Z_TagMalloc( size_t size, memtag_t tag );	// NOT 0 filled memory
+void *Z_Malloc( size_t size );			// returns 0 filled memory
+void *S_Malloc( size_t size );			// NOT 0 filled memory only for small allocations
 #endif
 void Z_Free( void *ptr );
 int Z_FreeTags( memtag_t tag );
@@ -1117,7 +1127,7 @@ void Hunk_ClearToMark( void );
 void Hunk_SetMark( void );
 qboolean Hunk_CheckMark( void );
 void Hunk_ClearTempMemory( void );
-void *Hunk_AllocateTempMemory( int size );
+void *Hunk_AllocateTempMemory( size_t size );
 void Hunk_FreeTempMemory( void *buf );
 int	Hunk_MemoryRemaining( void );
 void Hunk_Log( void);
@@ -1319,7 +1329,7 @@ const char *Sys_SteamPath( void );
 char    *Sys_DefaultAppPath( void );
 #endif
 
-char **Sys_ListFiles( const char *directory, const char *extension, const char *filter, int *numfiles, qboolean wantsubs );
+char **Sys_ListFiles( const char *directory, const char *extension, const char *filter, int *numfiles, int subdirs );
 void Sys_FreeFileList( char **list );
 
 qboolean Sys_GetFileStats( const char *filename, fileOffset_t *size, fileTime_t *mtime, fileTime_t *ctime );
