@@ -63,7 +63,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //#pragma warning(disable : 4136)
 #pragma warning(disable : 4152)		// nonstandard extension, function/data pointer conversion in expression
 #pragma warning(disable : 4200)		// nonstandard extension used: size-sided array in struct/union
-//#pragma warning(disable : 4201)
+#pragma warning(disable : 4201)		// nonstandard extension used: nameless struct/union
 #pragma warning(disable : 4206)		// nonstandard extension used: translation unit is empty
 //#pragma warning(disable : 4214)
 #pragma warning(disable : 4267)		// conversion from 'size_t' to 'int', possible loss of data
@@ -161,6 +161,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 short ShortSwap( short l );
 int LongSwap( int l );
 float FloatSwap( const float *f );
+void CopyShortSwap( void *dest, void *src );
+void CopyLongSwap( void *dest, void *src );
 
 #include "q_platform.h"
 
@@ -173,7 +175,7 @@ float FloatSwap( const float *f );
 		typedef __int64 int64_t;
 		typedef __int32 int32_t;
 		typedef __int16 int16_t;
-		typedef __int8 int8_t;
+		typedef signed __int8 int8_t;
 		typedef unsigned __int64 uint64_t;
 		typedef unsigned __int32 uint32_t;
 		typedef unsigned __int16 uint16_t;
@@ -363,9 +365,9 @@ typedef enum {
 
 #ifdef HUNK_DEBUG
 #define Hunk_Alloc( size, preference )				Hunk_AllocDebug(size, preference, #size, __FILE__, __LINE__)
-void *Hunk_AllocDebug( int size, ha_pref preference, char *label, char *file, int line );
+void *Hunk_AllocDebug( size_t size, ha_pref preference, const char *label, const char *file, int line );
 #else
-void *Hunk_Alloc( int size, ha_pref preference );
+void *Hunk_Alloc( size_t size, ha_pref preference );
 #endif
 
 #if defined(__GNUC__) && !defined(__MINGW32__) && !defined(MACOS_X)
@@ -479,6 +481,10 @@ extern	vec4_t		colorDkGrey;
 #define S_COLOR_CYAN	"^5"
 #define S_COLOR_MAGENTA	"^6"
 #define S_COLOR_WHITE	"^7"
+
+#define S_COLOR_DEVEL	S_COLOR_CYAN
+#define S_COLOR_WARNING	S_COLOR_YELLOW
+#define S_COLOR_ERROR	S_COLOR_RED
 
 extern const vec4_t	g_color_table[ 64 ];
 extern int ColorIndexFromChar( char ccode );
@@ -694,6 +700,8 @@ float AngleNormalize360 ( float angle );
 float AngleNormalize180 ( float angle );
 float AngleDelta ( float angle1, float angle2 );
 
+void SetupRotationMatrix( vec3_t matrix[3], const vec3_t dir, float degrees );
+
 qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
@@ -741,7 +749,7 @@ void	COM_ParseWarning( const char *format, ... ) __attribute__ ((format (printf,
 char	*COM_ParseComplex( const char **data_p, qboolean allowLineBreak );
 
 typedef enum {
-	TK_GENEGIC = 0, // for single-char tokens
+	TK_GENERIC = 0, // for single-char tokens
 	TK_STRING,
 	TK_QUOTED,
 	TK_EQ,
@@ -797,7 +805,7 @@ const char *Com_SkipCharset( const char *s, const char *sep );
 
 void Com_RandomBytes( byte *string, int len );
 
-void Com_SortFileList( char **list, int nfiles, int fastSort );
+void Com_SortList( char** list, int n );
 
 // mode parm for FS_FOpenFile
 typedef enum {
