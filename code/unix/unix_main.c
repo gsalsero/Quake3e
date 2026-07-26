@@ -201,6 +201,35 @@ void tty_Left(int count)
     }
 }
 
+void tty_ClearToEnd( void )
+{
+	write(STDOUT_FILENO, "\033[K", 3);
+}
+
+void applyConsoleSuggestion( void )
+{
+	Con_FindHistorySuggestion(&tty_con);
+
+	// clear the current suggestion
+	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
+	tty_Right(cursorOffset);
+	tty_ClearToEnd();
+
+	if(strlen(tty_con.consoleSuggestion) > 0)
+	{
+		char* suggestion = tty_con.consoleSuggestion + strlen(tty_con.buffer);
+		// Set text color to grey
+		write(STDOUT_FILENO, "\033[90m", 5);
+		write(STDOUT_FILENO, suggestion, strlen(suggestion));
+		write(STDOUT_FILENO, "\033[0m", 4);  // Reset text color
+
+		cursorOffset += strlen(suggestion);
+	}
+
+	tty_Left(cursorOffset);
+}
+
+
 // show the current line
 // FIXME TTimo need to position the cursor if needed??
 void tty_Show( void )
@@ -220,14 +249,10 @@ void tty_Show( void )
 			{
 				write( STDOUT_FILENO, tty_con.buffer, len);
 				tty_Left(len - tty_con.cursor);
+				applyConsoleSuggestion();
 			}
 		}
 	}
-}
-
-void tty_ClearToEnd( void )
-{
-	write(STDOUT_FILENO, "\033[K", 3);
 }
 
 // never exit without calling this, or your terminal will be left in a pretty bad state
@@ -362,6 +387,16 @@ void floating_point_exception_handler( int whatever )
 	signal( SIGFPE, floating_point_exception_handler );
 }
 
+void clearSuggestion( void )
+{
+	int cursorOffset = strlen(&tty_con.buffer[tty_con.cursor]);
+	tty_Right(cursorOffset);
+
+	tty_ClearToEnd();
+
+	tty_Left(cursorOffset);
+}
+
 // initialize the console input (tty mode if wanted and possible)
 // warning: might be called from signal handler
 tty_err Sys_ConsoleInputInit( void )
@@ -481,6 +516,8 @@ char *Sys_ConsoleInput( void )
 					tty_ClearToEnd();
 					
 					tty_Left(len);
+
+					applyConsoleSuggestion();
 				}
 				return NULL;
 			}
@@ -496,6 +533,7 @@ char *Sys_ConsoleInput( void )
 					while ( *s == '\\' || *s == '/' ) // skip leading slashes
 						s++;
 					Q_strncpyz( text, s, sizeof( text ) );
+					clearSuggestion();
 					Field_Clear( &tty_con );
 					write( STDOUT_FILENO, "\n]", 2 );
 					return text;
@@ -545,6 +583,15 @@ char *Sys_ConsoleInput( void )
 									tty_con.cursor++;
 									write(STDOUT_FILENO, "\033[C", 3); // Move the cursor right
 								}
+								else
+								{
+									int suggestLen = strlen(tty_con.consoleSuggestion);
+									if(suggestLen > 0) {
+										memmove(tty_con.buffer, tty_con.consoleSuggestion, suggestLen);
+										write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]));
+										tty_con.cursor = suggestLen;
+									}
+								}
 								break;
 							case 'D': 
 							    if(tty_con.cursor > 0) 
@@ -571,6 +618,7 @@ char *Sys_ConsoleInput( void )
 					{
 						write( STDOUT_FILENO, tty_con.buffer, len);
 						tty_Left(len - tty_con.cursor);
+						applyConsoleSuggestion();
 					}
 					tty_FlushIn();
 					return NULL;
@@ -622,6 +670,8 @@ char *Sys_ConsoleInput( void )
 				tty_con.cursor++;
 
 				tty_Left(len - 1);
+
+				applyConsoleSuggestion();
 			}
 		}
 		return NULL;
