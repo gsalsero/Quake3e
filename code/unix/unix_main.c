@@ -187,6 +187,19 @@ void tty_Hide( void )
 	ttycon_hide++;
 }
 
+void tty_Right(int count)
+{
+    for (int i = 0; i < count; i++) {
+        write(STDOUT_FILENO, "\033[C", 3);
+    }
+}
+
+void tty_Left(int count)
+{
+    for (int i = 0; i < count; i++) {
+        write(STDOUT_FILENO, "\033[D", 3);
+    }
+}
 
 // show the current line
 // FIXME TTimo need to position the cursor if needed??
@@ -202,14 +215,20 @@ void tty_Show( void )
 		{
 			write( STDOUT_FILENO, "]", 1 ); // -EC-
 
-			if ( tty_con.cursor > 0 )
+			int len = strlen(tty_con.buffer);
+			if ( len > 0 )
 			{
-				write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+				write( STDOUT_FILENO, tty_con.buffer, len);
+				tty_Left(len - tty_con.cursor);
 			}
 		}
 	}
 }
 
+void tty_ClearToEnd( void )
+{
+	write(STDOUT_FILENO, "\033[K", 3);
+}
 
 // never exit without calling this, or your terminal will be left in a pretty bad state
 void Sys_ConsoleInputShutdown( void )
@@ -343,7 +362,6 @@ void floating_point_exception_handler( int whatever )
 	signal( SIGFPE, floating_point_exception_handler );
 }
 
-
 // initialize the console input (tty mode if wanted and possible)
 // warning: might be called from signal handler
 tty_err Sys_ConsoleInputInit( void )
@@ -450,9 +468,19 @@ char *Sys_ConsoleInput( void )
 			{
 				if (tty_con.cursor > 0)
 				{
+					memmove(&tty_con.buffer[tty_con.cursor - 1], &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]) + 1);
+
+ 					// Move the terminal cursor back one position
+ 					tty_Back();
 					tty_con.cursor--;
-					tty_con.buffer[tty_con.cursor] = '\0';
-					tty_Back();
+
+ 					// Print the rest of the buffer from the cursor position
+					int len = strlen(&tty_con.buffer[tty_con.cursor]);
+					write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], len);
+
+					tty_ClearToEnd();
+					
+					tty_Left(len);
 				}
 				return NULL;
 			}
@@ -513,9 +541,22 @@ char *Sys_ConsoleInput( void )
 								return NULL;
 								break;
 							case 'C': // right
-							case 'D': // left
+								if (tty_con.cursor < strlen(tty_con.buffer)) {
+									tty_con.cursor++;
+									write(STDOUT_FILENO, "\033[C", 3); // Move the cursor right
+								}
+								break;
+							case 'D': 
+							    if(tty_con.cursor > 0) 
+								{
+									tty_con.cursor--;
+									write(STDOUT_FILENO, "\033[D", 3); // Move the cursor left
+								}
+								return NULL;
+								break;
 							//case 'H': // home
 							//case 'F': // end
+							default:
 								return NULL;
 							}
 						}
@@ -525,11 +566,27 @@ char *Sys_ConsoleInput( void )
 				if ( key == 12 ) // clear teaminal
 				{
 					write( STDOUT_FILENO, "\ec]", 3 );
-					if ( tty_con.cursor )
+					int len = strlen(tty_con.buffer);
+					if ( len > 0 )
 					{
-						write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+						write( STDOUT_FILENO, tty_con.buffer, len);
+						tty_Left(len - tty_con.cursor);
 					}
 					tty_FlushIn();
+					return NULL;
+				}
+
+				if (key == 1) // Ctrl+A
+				{
+					tty_Left(tty_con.cursor);
+					tty_con.cursor = 0;
+					return NULL;
+				}
+
+				if (key == 5) // Ctrl+E
+				{
+					tty_Right(strlen(&tty_con.buffer[tty_con.cursor]));
+					tty_con.cursor = strlen(tty_con.buffer);
 					return NULL;
 				}
 
@@ -549,15 +606,23 @@ char *Sys_ConsoleInput( void )
 				tty_FlushIn();
 				return NULL;
 			}
+
 			if ( tty_con.cursor >= sizeof( text ) - 1 )
 				return NULL;
-			// push regular character
-			tty_con.buffer[ tty_con.cursor ] = key;
-			tty_con.cursor++;
-			tty_con.buffer[tty_con.cursor] = 0;
+			// Push regular character
+			if (tty_con.cursor < sizeof(tty_con.buffer) - 1) {
+				// Shift characters to the right
+				memmove(&tty_con.buffer[tty_con.cursor + 1], &tty_con.buffer[tty_con.cursor], strlen(&tty_con.buffer[tty_con.cursor]) + 1);
+				
+ 				// Insert the new character
+ 				tty_con.buffer[tty_con.cursor] = key;
 
-			// print the current line (this is differential)
-			write( STDOUT_FILENO, &key, 1 );
+				int len = strlen(&tty_con.buffer[tty_con.cursor]);
+				write(STDOUT_FILENO, &tty_con.buffer[tty_con.cursor], len);
+				tty_con.cursor++;
+
+				tty_Left(len - 1);
+			}
 		}
 		return NULL;
 	}
