@@ -1,0 +1,114 @@
+trigger:
+- azure-pipelines
+
+stages:
+- stage: linux
+  jobs:
+  - job: build
+    pool:
+      vmImage: 'ubuntu-latest'
+    container: gsalsero/quake3e-linux-builder:latest
+    steps:
+    - script: |
+        make
+      displayName: 'make quake3e'
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: build/release-linux-x86_64/
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-linux-x86_64-$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'pipeline'
+
+- stage: windows64
+  dependsOn: []
+  jobs:
+  # Standard DirectX Build
+  - job: build_directx
+    displayName: 'Build quake3e - DirectX Backend'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - powershell: |
+        Get-ChildItem -Path 'code\win32\msvc2017' -Recurse -Filter *.vcxproj |
+        ForEach-Object {
+            (Get-Content $_.FullName) -replace '<PlatformToolset>v141</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>' | Set-Content $_.FullName
+        }
+      displayName: 'Retarget platform toolset to v143'
+    - task: VSBuild@1
+      inputs:
+        solution: 'code/win32/msvc2017/quake3e.sln'
+        platform: 'Win64'
+        configuration: 'Release'
+        maximumCpuCount: true
+        msbuildArchitecture: 'x64'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: code\win32\msvc2017\output
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-directx-x64-$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'pipeline'
+
+  # Vulkan Backend Build
+  - job: build_vulkan
+    displayName: 'Build quake3e - Vulkan Backend'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - powershell: |
+        Get-ChildItem -Path 'code\win32\msvc2017' -Recurse -Filter *.vcxproj |
+        ForEach-Object {
+            (Get-Content $_.FullName) -replace '<PlatformToolset>v141</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>' | Set-Content $_.FullName
+        }
+      displayName: 'Retarget platform toolset to v143'
+    - task: VSBuild@1
+      inputs:
+        solution: 'code/win32/msvc2017/quake3e.sln'
+        msbuildArgs: '/p:ProjectDependencies=renderervk'
+        platform: 'Win64'
+        configuration: 'Release'
+        maximumCpuCount: true
+        msbuildArchitecture: 'x64'
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: code\win32\msvc2017\output
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-win-vulkan-x64-$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'pipeline'
+
+# - stage: macOS
+#   jobs:
+#   - job: build
+#     pool:
+#       vmImage: 'macos-14-arm64'
+#     steps:
+#     - script: |
+#         make
+#         ls -R
+#       displayName: 'make quake3e'
+#     # - task: ArchiveFiles@2
+#     #   inputs:
+#     #     rootFolderOrFile: build/release-linux-x86_64/
+#     #     includeRootFolder: true
+#     #     archiveType: 'zip'
+#     #     archiveFile: '$(Build.ArtifactStagingDirectory)/quake3e-release-macos-arm64-$(Build.BuildId).zip'
+#     #     replaceExistingArchive: true
+#     # - task: PublishPipelineArtifact@1
+#     #   inputs:
+#     #     targetPath: '$(Build.ArtifactStagingDirectory)'
+#     #     publishLocation: 'pipeline'
