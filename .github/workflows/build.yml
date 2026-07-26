@@ -9,7 +9,7 @@ on:
       - 'docs/*'
   push:
     branches:
-      - main
+      - azure-pipelines-all
     paths-ignore:
       - '**.md'
       - '*.txt'
