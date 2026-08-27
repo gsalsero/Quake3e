@@ -223,7 +223,13 @@ static const unsigned pak_checksums[] = {
 #define USE_PK3_CACHE_FILE
 
 #define USE_HANDLE_CACHE
-#define MAX_CACHED_HANDLES 384
+#define MAX_CACHED_HANDLES	250			// minimal from win32|linux|mac
+
+#if defined (MAX_CACHED_HANDLES) && (MAX_CACHED_HANDLES < 4)
+// to avoid infitine loops in FS_AddToHandleList()
+// assume that at least (FS_LOCK_REF + 1) can be kept locked
+#error "invalid filesystem configruation"
+#endif
 
 #define MAX_ZPATH			256
 #define MAX_FILEHASH_SIZE	4096
@@ -232,7 +238,7 @@ typedef struct fileInPack_s {
 	char					*name;		// name of the file
 	unsigned long			pos;		// file info position in zip
 	unsigned long			size;		// file size
-	struct	fileInPack_s*	next;		// next file in the hash
+	struct	fileInPack_s*	next;		// next file in the hash bucket
 } fileInPack_t;
 
 typedef struct pack_s {
@@ -248,12 +254,12 @@ typedef struct pack_s {
 	int				hashSize;					// hash table size (power of 2)
 	fileInPack_t*	*hashTable;					// hash table
 	fileInPack_t*	buildBuffer;				// buffer with the filenames etc.
-	int				index;
+	int				index;						// serial index assigned at FS_Startup()
 
 	int				handleUsed;
 
 #ifdef USE_HANDLE_CACHE
-	struct pack_s	*next_h;						// double-linked list of unreferenced paks with open file handles
+	struct pack_s	*next_h;					// double-linked list of unreferenced paks with open file handles
 	struct pack_s	*prev_h;
 #endif
 
@@ -612,16 +618,9 @@ FS_CreatePath
 Creates any directories needed to store the given filename
 ============
 */
-static qboolean FS_CreatePath( const char *OSPath ) {
+qboolean FS_CreatePath( const char *OSPath ) {
 	char	path[MAX_OSPATH*2+1];
 	char	*ofs;
-	
-	// make absolutely sure that it can't back up the path
-	// FIXME: is c: allowed???
-	if ( FS_CheckDirTraversal( OSPath ) ) {
-		Com_Printf( "WARNING: refusing to create relative path \"%s\"\n", OSPath );
-		return qtrue;
-	}
 
 	Q_strncpyz( path, OSPath, sizeof( path ) );
 	// Make sure we have OS correct slashes
@@ -890,6 +889,12 @@ fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
 		return FS_INVALID_HANDLE;
 	}
 
+	if ( FS_CheckDirTraversal( filename ) ) {
+		return FS_INVALID_HANDLE;
+	}
+
+	FS_CheckFilenameIsNotAllowed( filename, __func__, qtrue );
+
 	ospath = FS_BuildOSPath( fs_homepath->string, filename, NULL );
 
 	f = FS_HandleForFile();
@@ -899,8 +904,6 @@ fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_SV_FOpenFileWrite: %s\n", ospath );
 	}
-
-	FS_CheckFilenameIsNotAllowed( ospath, __func__, qtrue );
 
 	Com_DPrintf( "writing to: %s\n", ospath );
 
@@ -1023,6 +1026,11 @@ void FS_SV_Rename( const char *from, const char *to ) {
 	// S_ClearSoundBuffer();
 #endif
 
+	if ( FS_CheckDirTraversal( from ) || FS_CheckDirTraversal( to ) ) {
+		Com_Printf( S_COLOR_ERROR "%s: rename %s -> %s failed\n", __func__, from, to );
+		return;
+	}
+
 	from_ospath = FS_BuildOSPath( fs_homepath->string, from, NULL );
 	to_ospath = FS_BuildOSPath( fs_homepath->string, to, NULL );
 
@@ -1055,6 +1063,11 @@ void FS_Rename( const char *from, const char *to ) {
 	// don't let sound stutter
 	// S_ClearSoundBuffer();
 #endif
+
+	if ( FS_CheckDirTraversal( from ) || FS_CheckDirTraversal( to ) ) {
+		Com_Printf( S_COLOR_ERROR "%s: rename %s -> %s failed\n", __func__, from, to );
+		return;
+	}
 
 	from_ospath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, from );
 	to_ospath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, to );
@@ -1100,7 +1113,7 @@ static void FS_RemoveFromHandleList( pack_t *pak )
 
 	pak->next_h = NULL;
 	pak->prev_h = NULL;
-	
+
 	hpaksCount--;
 
 #ifdef _DEBUG
@@ -1125,8 +1138,17 @@ static void FS_AddToHandleList( pack_t *pak )
 		Com_Error( ERR_DROP, "%s(): invalid pak pointers", __func__ );
 	}
 #endif
+
+	// LRU eviction: if list is full, remove least recently used pak handle
 	while ( hpaksCount >= MAX_CACHED_HANDLES ) {
-		pack_t *pk = hhead->prev_h; // tail item
+		pack_t *pk = hhead->prev_h;
+		// skip locked items
+		while ( pk->referenced & FS_LOCK_REF ) {
+			// adjust head to avoid redundant lookups in future calls
+			hhead = pk;
+			// TODO: insert new item after hhead?
+			pk = pk->prev_h;
+		}
 #ifdef _DEBUG
 		if ( pk->handle == NULL || pk->handleUsed != 0 ) {
 			Com_Error( ERR_DROP, "%s(): invalid pak handle", __func__ );
@@ -1141,6 +1163,7 @@ static void FS_AddToHandleList( pack_t *pak )
 		pak->next_h = pak;
 		pak->prev_h = pak;
 	} else {
+		// insert before current head
 		hhead->prev_h->next_h = pak;
 		pak->prev_h = hhead->prev_h;
 		hhead->prev_h = pak;
@@ -1159,7 +1182,7 @@ FS_FCloseFile
 
 If the FILE pointer is an open pak file, leave it open.
 
-For some reason, other dll's can't just cal fclose()
+For some reason, other dll's can't just call fclose()
 on files returned by FS_FOpenFile...
 ==============
 */
@@ -1173,6 +1196,7 @@ void FS_FCloseFile( fileHandle_t f ) {
 	fd = &fsh[ f ];
 
 	if ( fd->zipFile && fd->pak ) {
+		// pak file
 		unzCloseCurrentFile( fd->handleFiles.file.z );
 		if ( fd->handleFiles.unique ) {
 			unzClose( fd->handleFiles.file.z );
@@ -1185,15 +1209,16 @@ void FS_FCloseFile( fileHandle_t f ) {
 			FS_AddToHandleList( fd->pak );
 		}
 #else
-		if ( !fs_locked->integer ) {
-			if ( fd->pak->handle && !fd->pak->handleUsed ) {
+		if ( fs_locked->integer == 0 ) {
+			if ( fd->pak->handle && fd->pak->handleUsed == 0 ) {
 				unzClose( fd->pak->handle );
 				fd->pak->handle = NULL;
 			}
 		}
 #endif
 	} else {
-		if ( fd->handleFiles.file.o ) {
+		// regular file
+		if ( fd->handleFiles.file.o != NULL ) {
 			fclose( fd->handleFiles.file.o );
 			fd->handleFiles.file.o = NULL;
 		}
@@ -1235,13 +1260,17 @@ fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 		return FS_INVALID_HANDLE;
 	}
 
+	if ( FS_CheckDirTraversal( filename ) ) {
+		return FS_INVALID_HANDLE;
+	}
+
+	FS_CheckFilenameIsNotAllowed( filename, __func__, qfalse );
+
 	ospath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, filename );
 
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_FOpenFileWrite: %s\n", ospath );
 	}
-
-	FS_CheckFilenameIsNotAllowed( ospath, __func__, qfalse );
 
 	f = FS_HandleForFile();
 	fd = &fsh[ f ];
@@ -1287,6 +1316,12 @@ fileHandle_t FS_FOpenFileAppend( const char *filename ) {
 		return FS_INVALID_HANDLE;
 	}
 
+	if ( FS_CheckDirTraversal( filename ) ) {
+		return FS_INVALID_HANDLE;
+	}
+
+	FS_CheckFilenameIsNotAllowed( filename, __func__, qfalse );
+
 #ifndef DEDICATED
 	// don't let sound stutter
 	// S_ClearSoundBuffer();
@@ -1297,8 +1332,6 @@ fileHandle_t FS_FOpenFileAppend( const char *filename ) {
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_FOpenFileAppend: %s\n", ospath );
 	}
-
-	FS_CheckFilenameIsNotAllowed( ospath, __func__, qfalse );
 
 	f = FS_HandleForFile();
 	fd = &fsh[ f ];
@@ -1479,11 +1512,17 @@ static int FS_OpenFileInPak( fileHandle_t *file, pack_t *pak, fileInPack_t *pakF
 	if ( !( pak->referenced & FS_GENERAL_REF ) && FS_GeneralRef( pakFile->name ) ) {
 		pak->referenced |= FS_GENERAL_REF;
 	}
-	if ( !( pak->referenced & FS_CGAME_REF ) && !strcmp( pakFile->name, "vm/cgame.qvm" ) ) {
-		pak->referenced |= FS_CGAME_REF;
-	}
-	if ( !( pak->referenced & FS_UI_REF ) && !strcmp( pakFile->name, "vm/ui.qvm" ) ) {
-		pak->referenced |= FS_UI_REF;
+
+	if ( !strncmp( pakFile->name, "vm/", 3 ) ) {
+		if ( !( pak->referenced & FS_CGAME_REF ) && !strcmp( pakFile->name + 3, "cgame.qvm" ) ) {
+			pak->referenced |= FS_CGAME_REF;
+		}
+		if ( !( pak->referenced & FS_UI_REF ) && !strcmp( pakFile->name + 3, "ui.qvm" ) ) {
+			pak->referenced |= FS_UI_REF;
+		}
+		if ( !( pak->referenced & FS_QAGAME_REF ) && !strcmp( pakFile->name + 3, "qagame.qvm" ) ) {
+			pak->referenced |= FS_QAGAME_REF;
+		}
 	}
 
 	if ( !pak->handle ) {
@@ -1607,7 +1646,7 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 	// The searchpaths do guarantee that something will always
 	// be prepended, so we don't need to worry about "c:" or "//limbo"
 	if ( FS_CheckDirTraversal( filename ) ) {
-		if (file) {
+		if ( file ) {
 			*file = FS_INVALID_HANDLE;
 		}
 		return -1;
@@ -1728,7 +1767,7 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 FS_TouchFileInPak
 ===========
 */
-void FS_TouchFileInPak( const char *filename ) {
+void FS_TouchFileInPak( const char *filename, int refbits ) {
 	const searchpath_t *search;
 	long			fullHash, hash;
 	pack_t			*pak;
@@ -1751,16 +1790,7 @@ void FS_TouchFileInPak( const char *filename ) {
 			do {
 				// case and separator insensitive comparisons
 				if ( !FS_FilenameCompare( pakFile->name, filename ) ) {
-					// found it!
-					if ( !( pak->referenced & FS_GENERAL_REF ) && FS_GeneralRef( filename ) ) {
-						pak->referenced |= FS_GENERAL_REF;
-					}
-					if ( !( pak->referenced & FS_CGAME_REF ) && !strcmp( filename, "vm/cgame.qvm" ) ) {
-						pak->referenced |= FS_CGAME_REF;
-					}
-					if ( !( pak->referenced & FS_UI_REF ) && !strcmp( filename, "vm/ui.qvm" ) ) {
-						pak->referenced |= FS_UI_REF;
-					}
+					pak->referenced |= refbits;
 					return;
 				}
 				pakFile = pakFile->next;
@@ -4553,7 +4583,7 @@ static void FS_ReorderSearchPaths( void ) {
 		return;
 
 	// relink path chains in following order:
-	// 1. pk3dirs @ pak files
+	// 1. pak files and pk3dirs
 	// 2. directories
 	list = (searchpath_t **)Z_Malloc( cnt * sizeof( list[0] ) );
 	paks = list;
@@ -5109,7 +5139,7 @@ const char *FS_ReferencedPakChecksums( void ) {
 			if ( search->pack->exclude ) {
 				continue;
 			}
-			if ( search->pack->referenced || !FS_IsBaseGame( search->pack->pakGamename ) ) {
+			if ( (search->pack->referenced & FS_PURE_REF) || !FS_IsBaseGame( search->pack->pakGamename ) ) {
 				Q_strcat( info, sizeof( info ), va( "%i ", search->pack->checksum ) );
 			}
 		}
@@ -5196,7 +5226,7 @@ qboolean FS_ExcludeReference( void ) {
 
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
 		if ( search->pack ) {
-			if ( !search->pack->referenced ) {
+			if ( ( search->pack->referenced & FS_PURE_REF ) == 0 ) {
 				continue;
 			}
 			pakName = va( "%s/%s", search->pack->pakGamename, search->pack->pakBasename );
@@ -5236,7 +5266,7 @@ const char *FS_ReferencedPakNames( void ) {
 			if ( search->pack->exclude ) {
 				continue;
 			}
-			if ( search->pack->referenced || !FS_IsBaseGame( search->pack->pakGamename ) ) {
+			if ( ( search->pack->referenced & FS_PURE_REF ) || !FS_IsBaseGame( search->pack->pakGamename ) ) {
 				pakName = va( "%s/%s", search->pack->pakGamename, search->pack->pakBasename );
 				if ( *info != '\0' ) {
 					Q_strcat( info, sizeof( info ), " " );
@@ -5258,7 +5288,7 @@ FS_ClearPakReferences
 void FS_ClearPakReferences( int flags ) {
 	const searchpath_t *search;
 
-	if ( !flags ) {
+	if ( flags == 0 ) {
 		flags = -1;
 	}
 	for ( search = fs_searchpaths; search; search = search->next ) {
@@ -5431,9 +5461,9 @@ void FS_InitFilesystem( void ) {
 	Com_StartupVariable( "fs_locked" );
 #endif
 
-#ifdef _WIN32
- 	_setmaxstdio( 2048 );
-#endif
+//#ifdef _WIN32
+// 	_setmaxstdio( 2048 );
+//#endif
 
 	// try to start up normally
 	FS_Restart( 0 );
@@ -5758,13 +5788,17 @@ fileHandle_t FS_PipeOpenWrite( const char *cmd, const char *filename ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
 
+	if ( FS_CheckDirTraversal( filename ) ) {
+		return FS_INVALID_HANDLE;
+	}
+
+	FS_CheckFilenameIsNotAllowed( filename, __func__, qfalse );
+
 	ospath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, filename );
 
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_PipeOpenWrite: %s\n", ospath );
 	}
-
-	FS_CheckFilenameIsNotAllowed( ospath, __func__, qfalse );
 
 	f = FS_HandleForFile();
 	fd = &fsh[ f ];
